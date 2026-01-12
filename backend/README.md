@@ -51,6 +51,10 @@ FastAPI backend for the Personal Finance Tracker MVP.
 - **[Architecture](../docs/backend/architecture.md)** - System design and technical architecture
 - **[Error Handling](../docs/backend/error-handling.md)** - Error scenarios and financial correctness
 
+### 🎯 Scope Management
+- **[Scope Boundaries](../docs/backend/scope-boundaries.md)** - What NOT to build yet (prevent scope creep)
+- **[MVP Checklist](../docs/backend/mvp-checklist.md)** - Quick reference for scope decisions
+
 ### 📖 Project Documentation
 - **[Architectural Decisions](../docs/decisions.md)** - Key design decisions (ADRs)
 - **[Development Roadmap](../docs/roadmap.md)** - Phased development plan
