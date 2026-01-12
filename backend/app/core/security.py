@@ -25,11 +25,15 @@ def hash_password(password: str) -> str:
     Returns:
         Hashed password string safe for database storage
 
+    Note:
+        bcrypt has a 72-byte limit. Passwords are truncated to 72 characters.
+
     Example:
         >>> hash_password("MyPassword123")
         "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYbY8j4s3vC"
     """
-    return pwd_context.hash(password)
+    # bcrypt has a 72-byte limit, truncate to 72 characters to stay under limit
+    return pwd_context.hash(password[:72])
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -43,6 +47,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         True if password matches, False otherwise
 
+    Note:
+        bcrypt has a 72-byte limit. Passwords are truncated to 72 characters.
+
     Example:
         >>> hashed = hash_password("MyPassword123")
         >>> verify_password("MyPassword123", hashed)
@@ -50,7 +57,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         >>> verify_password("WrongPassword", hashed)
         False
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    # bcrypt has a 72-byte limit, truncate to 72 characters to match hash_password
+    return pwd_context.verify(plain_password[:72], hashed_password)
 
 
 def create_access_token(user_id: uuid.UUID, expires_delta: Optional[timedelta] = None) -> str:

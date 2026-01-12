@@ -23,8 +23,8 @@ class UserCreate(BaseModel):
     password: str = Field(
         ...,
         min_length=8,
-        max_length=100,
-        description="Password (min 8 characters, will be hashed)",
+        max_length=72,
+        description="Password (min 8 characters, max 72 bytes for bcrypt, will be hashed)",
         examples=["SecurePassword123!"],
     )
 

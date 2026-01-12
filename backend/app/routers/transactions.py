@@ -7,6 +7,7 @@ Transfers are handled atomically with two linked transactions.
 from typing import Annotated, List
 import uuid
 from datetime import date, datetime, timezone
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -16,17 +17,23 @@ from app.core.database import get_db
 from app.core.dependencies import CurrentUser
 from app.models.account import Account
 from app.models.transaction import Transaction, TransactionType
-from app.schemas.transaction import TransactionCreate, TransactionRead, TransferCreate
+from app.schemas.transaction import (
+    TransactionCreate,
+    TransactionResponse,
+    TransactionListResponse,
+    TransferCreate,
+    TransferResponse,
+)
 
 router = APIRouter()
 
 
-@router.post("", response_model=TransactionRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
 def create_transaction(
     transaction_data: TransactionCreate,
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
-) -> TransactionRead:
+) -> TransactionResponse:
     """
     Create a new transaction (income or expense).
 
@@ -77,7 +84,8 @@ def create_transaction(
     """
     # Validate: transaction date cannot be in the future
     today = date.today()
-    if transaction_data.transaction_date > today:
+    txn_date = date.fromisoformat(transaction_data.transaction_date)
+    if txn_date > today:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Transaction date cannot be in the future. Today is {today}",
@@ -114,8 +122,8 @@ def create_transaction(
             f"transaction uses {transaction_data.currency}",
         )
 
-    # Convert amount to minor units (paise/cents)
-    amount_minor = transaction_data.to_minor_units()
+    # Convert amount to minor units with sign based on transaction type
+    amount_minor = transaction_data.to_minor_units(transaction_data.transaction_type)
 
     # Create transaction
     new_transaction = Transaction(
@@ -127,7 +135,7 @@ def create_transaction(
         tag=transaction_data.tag,
         payment_method=transaction_data.payment_method,
         description=transaction_data.description,
-        transaction_date=transaction_data.transaction_date,
+        transaction_date=txn_date,
     )
 
     # Save to database
@@ -135,15 +143,19 @@ def create_transaction(
     db.commit()
     db.refresh(new_transaction)
 
-    return TransactionRead.from_db_model(new_transaction)
+    # Return response with account name
+    return TransactionResponse.from_db_model(
+        new_transaction,
+        account_name=account.name,
+    )
 
 
-@router.post("/transfer", response_model=List[TransactionRead], status_code=status.HTTP_201_CREATED)
+@router.post("/transfer", response_model=TransferResponse, status_code=status.HTTP_201_CREATED)
 def create_transfer(
     transfer_data: TransferCreate,
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
-) -> List[TransactionRead]:
+) -> TransferResponse:
     """
     Create a transfer between two accounts (atomic operation).
 
@@ -224,14 +236,15 @@ def create_transfer(
     """
     # Validate: transaction date cannot be in the future
     today = date.today()
-    if transfer_data.transaction_date > today:
+    txn_date = date.fromisoformat(transfer_data.transaction_date)
+    if txn_date > today:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Transaction date cannot be in the future. Today is {today}",
         )
 
     # Validate: Accounts must be different
-    if transfer_data.from_account_id == transfer_data.to_account_id:
+    if transfer_data.account_id == transfer_data.related_account_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot transfer to the same account",
@@ -241,7 +254,7 @@ def create_transfer(
     from_account = (
         db.query(Account)
         .filter(
-            Account.id == transfer_data.from_account_id,
+            Account.id == transfer_data.account_id,
             Account.user_id == current_user.id,  # 🔒 Security check
         )
         .first()
@@ -250,7 +263,7 @@ def create_transfer(
     to_account = (
         db.query(Account)
         .filter(
-            Account.id == transfer_data.to_account_id,
+            Account.id == transfer_data.related_account_id,
             Account.user_id == current_user.id,  # 🔒 Security check
         )
         .first()
@@ -279,7 +292,7 @@ def create_transfer(
         )
 
     # Convert amount to minor units
-    amount_minor = int(transfer_data.amount * 100)
+    amount_minor = int(Decimal(transfer_data.amount) * 100)
 
     try:
         # === ATOMIC OPERATION START ===
@@ -289,29 +302,29 @@ def create_transfer(
         # Transaction 1: Debit (money leaving from_account)
         debit_transaction = Transaction(
             user_id=current_user.id,
-            account_id=transfer_data.from_account_id,
+            account_id=transfer_data.account_id,
             amount_minor=-amount_minor,  # Negative = outgoing
             currency=transfer_data.currency.upper(),
             transaction_type=TransactionType.TRANSFER,
             tag=transfer_data.tag,
-            payment_method="transfer",
-            related_account_id=transfer_data.to_account_id,  # Link to destination
+            payment_method=transfer_data.payment_method or "transfer",
+            related_account_id=transfer_data.related_account_id,  # Link to destination
             description=transfer_data.description,
-            transaction_date=transfer_data.transaction_date,
+            transaction_date=txn_date,
         )
 
         # Transaction 2: Credit (money arriving at to_account)
         credit_transaction = Transaction(
             user_id=current_user.id,
-            account_id=transfer_data.to_account_id,
+            account_id=transfer_data.related_account_id,
             amount_minor=amount_minor,  # Positive = incoming
             currency=transfer_data.currency.upper(),
             transaction_type=TransactionType.TRANSFER,
             tag=transfer_data.tag,
-            payment_method="transfer",
-            related_account_id=transfer_data.from_account_id,  # Link to source
+            payment_method=transfer_data.payment_method or "transfer",
+            related_account_id=transfer_data.account_id,  # Link to source
             description=transfer_data.description,
-            transaction_date=transfer_data.transaction_date,
+            transaction_date=txn_date,
         )
 
         # Add both to session
@@ -327,11 +340,22 @@ def create_transfer(
 
         # === ATOMIC OPERATION END ===
 
-        # Return both transactions
-        return [
-            TransactionRead.from_db_model(debit_transaction),
-            TransactionRead.from_db_model(credit_transaction),
-        ]
+        # Return transfer response with both transactions
+        return TransferResponse(
+            transfer_id=str(debit_transaction.id),  # Use debit transaction ID as transfer ID
+            transactions=[
+                TransactionResponse.from_db_model(
+                    debit_transaction,
+                    account_name=from_account.name,
+                    related_account_name=to_account.name,
+                ),
+                TransactionResponse.from_db_model(
+                    credit_transaction,
+                    account_name=to_account.name,
+                    related_account_name=from_account.name,
+                ),
+            ],
+        )
 
     except IntegrityError as e:
         # Rollback if any constraint violation
@@ -342,7 +366,7 @@ def create_transfer(
         )
 
 
-@router.get("", response_model=List[TransactionRead])
+@router.get("", response_model=TransactionListResponse)
 def list_transactions(
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
@@ -351,7 +375,7 @@ def list_transactions(
     tag: str | None = None,
     limit: int = 100,
     offset: int = 0,
-) -> List[TransactionRead]:
+) -> TransactionListResponse:
     """
     List transactions for the authenticated user with optional filters.
 
@@ -443,19 +467,52 @@ def list_transactions(
         Transaction.created_at.desc(),
     )
 
+    # Get total count before pagination
+    total_count = query.count()
+
     # Apply pagination
     transactions = query.limit(limit).offset(offset).all()
 
-    # Convert to response format
-    return [TransactionRead.from_db_model(txn) for txn in transactions]
+    # Fetch all unique account IDs from transactions
+    account_ids = set()
+    for txn in transactions:
+        account_ids.add(txn.account_id)
+        if txn.related_account_id:
+            account_ids.add(txn.related_account_id)
+
+    # Fetch all accounts in one query
+    accounts_map = {}
+    if account_ids:
+        accounts = db.query(Account).filter(Account.id.in_(account_ids)).all()
+        accounts_map = {account.id: account.name for account in accounts}
+
+    # Convert to response format with denormalized account names
+    transaction_responses = []
+    for txn in transactions:
+        account_name = accounts_map.get(txn.account_id, "Unknown")
+        related_account_name = accounts_map.get(txn.related_account_id) if txn.related_account_id else None
+        transaction_responses.append(
+            TransactionResponse.from_db_model(
+                txn,
+                account_name=account_name,
+                related_account_name=related_account_name,
+            )
+        )
+
+    return TransactionListResponse(
+        transactions=transaction_responses,
+        total_count=total_count,
+        limit=limit,
+        offset=offset,
+    )
 
 
-@router.get("/{transaction_id}", response_model=TransactionRead)
+@router.get("/{transaction_id}", response_model=TransactionResponse)
 def get_transaction(
     transaction_id: uuid.UUID,
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
-) -> TransactionRead:
+) -> TransactionResponse:
     """
     Get a specific transaction by ID.
 
@@ -494,4 +551,18 @@ def get_transaction(
             detail="Transaction not found",
         )
 
-    return TransactionRead.from_db_model(transaction)
+    # Fetch account name
+    account = db.query(Account).filter(Account.id == transaction.account_id).first()
+    account_name = account.name if account else "Unknown"
+
+    # Fetch related account name if transfer
+    related_account_name = None
+    if transaction.related_account_id:
+        related_account = db.query(Account).filter(Account.id == transaction.related_account_id).first()
+        related_account_name = related_account.name if related_account else "Unknown"
+
+    return TransactionResponse.from_db_model(
+        transaction,
+        account_name=account_name,
+        related_account_name=related_account_name,
+    )
