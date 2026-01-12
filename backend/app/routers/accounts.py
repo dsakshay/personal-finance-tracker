@@ -3,10 +3,10 @@ Account management endpoints.
 All operations are scoped to the authenticated user.
 """
 
-from typing import Annotated, List
+from typing import Annotated
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -14,275 +14,148 @@ from app.core.database import get_db
 from app.core.dependencies import CurrentUser
 from app.models.account import Account
 from app.models.transaction import Transaction
-from app.schemas.account import AccountCreate, AccountRead, AccountWithBalance
+from app.schemas.account import AccountCreate, AccountResponse, AccountListResponse
 
 router = APIRouter()
 
 
-@router.post("", response_model=AccountRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=AccountResponse, status_code=status.HTTP_201_CREATED)
 def create_account(
     account_data: AccountCreate,
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
-) -> Account:
+) -> AccountResponse:
     """
     Create a new account for the authenticated user.
 
-    Authorization:
-    - Only authenticated users can create accounts
-    - Account is automatically owned by current_user
+    API Contract: docs/backend/api-contracts.md#1-post-accounts
 
-    Steps:
-    1. Validate currency and opening balance (handled by schema)
-    2. Convert opening_balance to minor units
-    3. Create account with user_id = current_user.id
-    4. Save to database
+    Data Flow:
+    1. Request → FastAPI validates via AccountCreate schema
+    2. Convert human-readable amount ("5000.00") to minor units (500000)
+    3. Create Account model with user_id from auth token
+    4. Save to database (PostgreSQL)
+    5. Convert back to human-readable format
+    6. Return AccountResponse
+
+    Authorization:
+    - Requires valid JWT token in Authorization header
+    - Account automatically owned by authenticated user
+    - user_id comes from token, NOT request body
+
+    Validation:
+    - name: 1-100 chars, not empty/whitespace
+    - currency: Exactly 3 uppercase letters, must be supported
+    - opening_balance: Decimal string with 2 places (e.g., "1000.50")
 
     Args:
-        account_data: Account details from request body
-        current_user: Injected authenticated user
-        db: Database session
+        account_data: Validated account details from request body
+        current_user: Injected from JWT token via Depends(get_current_user)
+        db: Database session via Depends(get_db)
 
     Returns:
-        Created account with human-readable amounts
+        Created account with current_balance = opening_balance
 
-    Example Request:
-        POST /api/v1/accounts
-        Authorization: Bearer <token>
-        {
-            "name": "HDFC Savings",
-            "currency": "INR",
-            "opening_balance": 5000.00
-        }
-
-    Example Response:
-        201 Created
-        {
-            "id": "uuid...",
-            "user_id": "uuid...",
-            "name": "HDFC Savings",
-            "currency": "INR",
-            "opening_balance": 5000.00,
-            "created_at": "2024-01-15T10:30:00Z"
-        }
+    Raises:
+        400: Validation error (invalid currency, format, etc.)
+        401: Unauthorized (missing/invalid token)
     """
-    # Convert opening balance to minor units (paise/cents)
+    # Step 1: Convert opening balance to minor units for database storage
+    # "5000.00" → 500000 paise
     opening_balance_minor = account_data.to_minor_units()
 
-    # Create new account owned by current user
+    # Step 2: Create SQLAlchemy model instance
+    # user_id comes from authenticated user (security!)
     new_account = Account(
-        user_id=current_user.id,  # Authorization: Owned by current user
+        user_id=current_user.id,  # From JWT token, not request
         name=account_data.name,
         currency=account_data.currency.upper(),
         opening_balance_minor=opening_balance_minor,
     )
 
-    # Save to database
+    # Step 3: Save to database
     db.add(new_account)
-    db.commit()
-    db.refresh(new_account)
+    db.commit()  # Insert into accounts table
+    db.refresh(new_account)  # Reload to get auto-generated id, created_at
 
-    # Convert back to human-readable format for response
-    return AccountRead.from_db_model(new_account)
+    # Step 4: Convert back to API response format
+    # Minor units → decimal strings for frontend
+    return AccountResponse.from_db_model(new_account)
 
 
-@router.get("", response_model=List[AccountRead])
+@router.get("", response_model=AccountListResponse)
 def list_accounts(
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
-) -> List[AccountRead]:
+    currency: str | None = Query(None, description="Filter by currency (ISO 4217)"),
+) -> AccountListResponse:
     """
     List all accounts for the authenticated user.
 
-    Authorization:
-    - Only returns accounts where user_id = current_user.id
-    - Users cannot see other users' accounts
+    API Contract: docs/backend/api-contracts.md#2-get-accounts
 
-    Steps:
-    1. Query accounts table with user_id filter
-    2. Convert each account to human-readable format
-    3. Return list of accounts
-
-    Args:
-        current_user: Injected authenticated user
-        db: Database session
-
-    Returns:
-        List of accounts owned by current user
-
-    Example Request:
-        GET /api/v1/accounts
-        Authorization: Bearer <token>
-
-    Example Response:
-        200 OK
-        [
-            {
-                "id": "uuid-1",
-                "user_id": "uuid-user",
-                "name": "HDFC Savings",
-                "currency": "INR",
-                "opening_balance": 5000.00,
-                "created_at": "2024-01-15T10:30:00Z"
-            },
-            {
-                "id": "uuid-2",
-                "user_id": "uuid-user",
-                "name": "Cash Wallet",
-                "currency": "INR",
-                "opening_balance": 1000.00,
-                "created_at": "2024-01-16T12:00:00Z"
-            }
-        ]
-    """
-    # Authorization: Only fetch accounts belonging to current user
-    accounts = (
-        db.query(Account)
-        .filter(Account.user_id == current_user.id)  # Critical security filter!
-        .order_by(Account.created_at.desc())
-        .all()
-    )
-
-    # Convert each account to human-readable format
-    return [AccountRead.from_db_model(account) for account in accounts]
-
-
-@router.get("/with-balance", response_model=List[AccountWithBalance])
-def list_accounts_with_balance(
-    current_user: CurrentUser,
-    db: Annotated[Session, Depends(get_db)],
-) -> List[AccountWithBalance]:
-    """
-    List all accounts with calculated current balances.
+    Data Flow:
+    1. Extract user_id from JWT token (via CurrentUser dependency)
+    2. Query accounts table: WHERE user_id = ? [AND currency = ?]
+    3. For each account, calculate current balance:
+       - Query SUM(amount_minor) from transactions WHERE account_id = ?
+       - current_balance = opening_balance + transaction_sum
+    4. Convert minor units to decimal strings
+    5. Return AccountListResponse with accounts array + total_count
 
     Authorization:
-    - Only returns accounts where user_id = current_user.id
+    - Multi-user isolation: Only returns accounts owned by authenticated user
+    - Cannot see other users' accounts (enforced by WHERE user_id filter)
 
     Balance Calculation:
-    - current_balance = opening_balance + sum(all transaction amounts)
-    - Derived on-demand (ADR-004: No cached balances in MVP)
-
-    Steps:
-    1. Query accounts for current user
-    2. For each account, sum all transaction amounts
-    3. Calculate current_balance = opening + sum(transactions)
-    4. Return accounts with balances
+    - On-demand calculation (no cached balances)
+    - current_balance = opening_balance + sum(all transactions)
+    - Accurate but may be slow with many accounts/transactions
 
     Args:
-        current_user: Injected authenticated user
-        db: Database session
+        current_user: Injected from JWT token via Depends(get_current_user)
+        db: Database session via Depends(get_db)
+        currency: Optional filter (e.g., "INR", "USD")
 
     Returns:
-        List of accounts with current balances
+        AccountListResponse with accounts list and total count
 
-    Example Response:
-        200 OK
-        [
-            {
-                "id": "uuid-1",
-                "user_id": "uuid-user",
-                "name": "HDFC Savings",
-                "currency": "INR",
-                "opening_balance": 5000.00,
-                "current_balance": 4200.50,  // opening + sum(transactions)
-                "created_at": "2024-01-15T10:30:00Z"
-            }
-        ]
+    Raises:
+        401: Unauthorized (missing/invalid token)
     """
-    # Authorization: Only fetch accounts belonging to current user
-    accounts = (
-        db.query(Account)
-        .filter(Account.user_id == current_user.id)
-        .order_by(Account.created_at.desc())
-        .all()
-    )
+    # Step 1: Build query with user_id filter (security!)
+    query = db.query(Account).filter(Account.user_id == current_user.id)
 
-    accounts_with_balance = []
+    # Step 2: Optional currency filter
+    if currency:
+        query = query.filter(Account.currency == currency.upper())
+
+    # Step 3: Execute query, ordered by creation date (newest first)
+    accounts = query.order_by(Account.created_at.desc()).all()
+
+    # Step 4: Calculate current balance for each account
+    account_responses = []
 
     for account in accounts:
-        # Calculate sum of all transactions for this account
-        # Uses aggregate function for efficiency
+        # Sum all transaction amounts in minor units
         transaction_sum = (
             db.query(func.sum(Transaction.amount_minor))
             .filter(Transaction.account_id == account.id)
             .scalar()
-        ) or 0  # Return 0 if no transactions
+        ) or 0  # Default to 0 if no transactions
 
-        # Calculate current balance in minor units
+        # Calculate current balance
         current_balance_minor = account.opening_balance_minor + transaction_sum
 
-        # Convert to human-readable format
-        from decimal import Decimal
-
-        account_dict = AccountRead.from_db_model(account).model_dump()
-        account_dict["current_balance"] = Decimal(current_balance_minor) / 100
-
-        accounts_with_balance.append(AccountWithBalance(**account_dict))
-
-    return accounts_with_balance
-
-
-@router.get("/{account_id}", response_model=AccountRead)
-def get_account(
-    account_id: uuid.UUID,
-    current_user: CurrentUser,
-    db: Annotated[Session, Depends(get_db)],
-) -> AccountRead:
-    """
-    Get a specific account by ID.
-
-    Authorization:
-    - Account must belong to current user
-    - Returns 404 if account doesn't exist OR doesn't belong to user
-
-    Steps:
-    1. Query account by ID
-    2. Verify user_id matches current_user.id
-    3. Return account data
-
-    Args:
-        account_id: UUID of account to retrieve
-        current_user: Injected authenticated user
-        db: Database session
-
-    Returns:
-        Account data if found and owned by current user
-
-    Raises:
-        HTTPException 404: If account not found or not owned by current user
-
-    Example Request:
-        GET /api/v1/accounts/123e4567-e89b-12d3-a456-426614174000
-        Authorization: Bearer <token>
-
-    Example Response:
-        200 OK
-        {
-            "id": "123e4567-e89b-12d3-a456-426614174000",
-            "user_id": "uuid-user",
-            "name": "HDFC Savings",
-            "currency": "INR",
-            "opening_balance": 5000.00,
-            "created_at": "2024-01-15T10:30:00Z"
-        }
-    """
-    # Authorization: Query with both account_id AND user_id
-    # This ensures users can only access their own accounts
-    account = (
-        db.query(Account)
-        .filter(
-            Account.id == account_id,
-            Account.user_id == current_user.id,  # Critical security filter!
+        # Convert to response format (minor units → decimal strings)
+        account_responses.append(
+            AccountResponse.from_db_model(account, current_balance_minor)
         )
-        .first()
+
+    # Step 5: Return wrapped response
+    return AccountListResponse(
+        accounts=account_responses,
+        total_count=len(account_responses),
     )
 
-    if not account:
-        # Don't reveal whether account exists - just say "not found"
-        # This prevents user enumeration
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Account not found",
-        )
 
-    return AccountRead.from_db_model(account)

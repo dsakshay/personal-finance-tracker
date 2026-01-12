@@ -12,64 +12,110 @@ from pydantic import BaseModel, Field, field_validator
 
 class AccountCreate(BaseModel):
     """
-    Schema for creating a new account.
+    Schema for creating a new account (POST /accounts).
 
-    Used when: POST /api/v1/accounts
-    Amount is in human-readable format (rupees/dollars), converted to minor units internally.
+    API Contract: docs/backend/api-contracts.md
+    Accepts human-readable amounts, converts to minor units for DB storage.
     """
 
     name: str = Field(
         ...,
         min_length=1,
         max_length=100,
-        description="Account name",
-        examples=["HDFC Savings", "Cash Wallet"],
+        description="Account display name",
+        examples=["HDFC Savings", "Cash Wallet", "Emergency Fund"],
     )
 
     currency: str = Field(
         ...,
         min_length=3,
         max_length=3,
-        description="ISO 4217 currency code",
+        description="ISO 4217 currency code (3 uppercase letters)",
         examples=["INR", "USD", "EUR"],
     )
 
-    opening_balance: Decimal = Field(
-        default=Decimal("0.00"),
-        description="Opening balance in human-readable format (e.g., 1000.50)",
-        examples=[1000.50, 0.00, 5000],
+    opening_balance: str = Field(
+        default="0.00",
+        description="Opening balance in decimal format (e.g., '1000.50')",
+        examples=["0.00", "5000.00", "10000.50"],
+        pattern=r"^-?\d+\.\d{2}$",
     )
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate name is not empty or only whitespace."""
+        if not v or v.strip() == "":
+            raise ValueError("Account name cannot be empty or only whitespace")
+        return v.strip()
 
     @field_validator("currency")
     @classmethod
     def validate_currency(cls, v: str) -> str:
-        """Validate currency code is uppercase 3-letter code."""
+        """
+        Validate currency code format and value.
+
+        Requirements:
+        - Exactly 3 uppercase letters
+        - Must be in supported currencies list
+        """
         v = v.upper()
-        # Common currency codes (extend as needed)
+
+        if len(v) != 3:
+            raise ValueError("Currency code must be exactly 3 characters")
+
+        if not v.isalpha():
+            raise ValueError("Currency code must contain only letters")
+
+        # Supported currency codes (ISO 4217)
         valid_currencies = {
-            "INR",
-            "USD",
-            "EUR",
-            "GBP",
-            "JPY",
-            "AUD",
-            "CAD",
-            "CHF",
-            "CNY",
-            "SGD",
+            "INR",  # Indian Rupee
+            "USD",  # US Dollar
+            "EUR",  # Euro
+            "GBP",  # British Pound
+            "JPY",  # Japanese Yen
+            "AUD",  # Australian Dollar
+            "CAD",  # Canadian Dollar
+            "CHF",  # Swiss Franc
+            "CNY",  # Chinese Yuan
+            "SGD",  # Singapore Dollar
         }
+
         if v not in valid_currencies:
             raise ValueError(
-                f"Invalid currency code. Must be one of: {', '.join(sorted(valid_currencies))}"
+                f"Unsupported currency '{v}'. Supported: {', '.join(sorted(valid_currencies))}"
             )
+
         return v
 
     @field_validator("opening_balance")
     @classmethod
-    def validate_opening_balance(cls, v: Decimal) -> Decimal:
-        """Ensure opening balance has at most 2 decimal places."""
-        if v.as_tuple().exponent < -2:
-            raise ValueError("Opening balance must have at most 2 decimal places")
+    def validate_opening_balance(cls, v: str) -> str:
+        """
+        Validate opening balance format.
+
+        Requirements:
+        - Valid decimal string with exactly 2 decimal places
+        - Format: [-]?[0-9]+\.[0-9]{2}
+        - Max: ±9999999999.99 (10 billion limit)
+        """
+        # Convert to Decimal for validation
+        try:
+            decimal_value = Decimal(v)
+        except Exception:
+            raise ValueError("Opening balance must be a valid decimal string")
+
+        # Check decimal places
+        if decimal_value.as_tuple().exponent != -2:
+            raise ValueError("Opening balance must have exactly 2 decimal places (e.g., '100.00')")
+
+        # Check range
+        max_value = Decimal("9999999999.99")
+        min_value = Decimal("-9999999999.99")
+
+        if decimal_value > max_value or decimal_value < min_value:
+            raise ValueError("Opening balance must be between -9999999999.99 and 9999999999.99")
+
         return v
 
     def to_minor_units(self) -> int:
@@ -77,53 +123,66 @@ class AccountCreate(BaseModel):
         Convert opening_balance to minor units (paise/cents).
 
         Examples:
-        - ₹1000.00 → 100000 paise
-        - $50.25 → 5025 cents
+        - "1000.00" → 100000 paise
+        - "50.25" → 5025 cents
+        - "-250.50" → -25050 paise
         """
-        return int(self.opening_balance * 100)
+        decimal_value = Decimal(self.opening_balance)
+        return int(decimal_value * 100)
 
     class Config:
         json_schema_extra = {
             "example": {
-                "name": "HDFC Savings Account",
+                "name": "Emergency Fund",
                 "currency": "INR",
-                "opening_balance": 5000.00,
+                "opening_balance": "50000.00",
             }
         }
 
 
-class AccountRead(BaseModel):
+class AccountResponse(BaseModel):
     """
-    Schema for reading account data (responses).
+    Schema for account responses (POST /accounts, GET /accounts).
 
-    Used when: GET /api/v1/accounts, GET /api/v1/accounts/{id}
-    Converts minor units back to human-readable format.
+    API Contract: docs/backend/api-contracts.md
+    Returns human-readable amounts (decimal strings with 2 places).
     """
 
     id: uuid.UUID = Field(..., description="Account unique identifier")
-    user_id: uuid.UUID = Field(..., description="Owner user ID")
-    name: str = Field(..., description="Account name")
+    name: str = Field(..., description="Account display name")
     currency: str = Field(..., description="ISO 4217 currency code")
-    opening_balance: Decimal = Field(..., description="Opening balance in human format")
-    created_at: datetime = Field(..., description="Account creation timestamp")
+    opening_balance: str = Field(..., description="Opening balance (decimal string)")
+    current_balance: str = Field(..., description="Current balance including transactions")
+    created_at: datetime = Field(..., description="Account creation timestamp (UTC)")
 
     @classmethod
-    def from_db_model(cls, account: "Account") -> "AccountRead":
+    def from_db_model(cls, account: "Account", current_balance_minor: int | None = None) -> "AccountResponse":
         """
-        Create schema from SQLAlchemy model, converting minor units to decimal.
+        Create response schema from SQLAlchemy model.
+
+        Converts minor units to human-readable decimal strings.
 
         Args:
             account: SQLAlchemy Account model instance
+            current_balance_minor: Current balance in minor units (if None, uses opening balance)
 
         Returns:
-            AccountRead schema with human-readable amounts
+            AccountResponse with decimal string amounts
         """
+        # Use provided current balance or default to opening balance
+        if current_balance_minor is None:
+            current_balance_minor = account.opening_balance_minor
+
+        # Convert minor units to decimal strings
+        opening_decimal = Decimal(account.opening_balance_minor) / 100
+        current_decimal = Decimal(current_balance_minor) / 100
+
         return cls(
             id=account.id,
-            user_id=account.user_id,
             name=account.name,
             currency=account.currency,
-            opening_balance=Decimal(account.opening_balance_minor) / 100,
+            opening_balance=f"{opening_decimal:.2f}",
+            current_balance=f"{current_decimal:.2f}",
             created_at=account.created_at,
         )
 
@@ -131,38 +190,47 @@ class AccountRead(BaseModel):
         from_attributes = True
         json_schema_extra = {
             "example": {
-                "id": "123e4567-e89b-12d3-a456-426614174000",
-                "user_id": "987fcdeb-51a2-43f1-9876-543210fedcba",
-                "name": "HDFC Savings Account",
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "name": "Emergency Fund",
                 "currency": "INR",
-                "opening_balance": 5000.00,
-                "created_at": "2024-01-15T10:30:00Z",
+                "opening_balance": "50000.00",
+                "current_balance": "48200.50",
+                "created_at": "2026-01-12T10:30:00Z",
             }
         }
 
 
-class AccountWithBalance(AccountRead):
+class AccountListResponse(BaseModel):
     """
-    Extended account schema including calculated current balance.
+    Schema for GET /accounts response.
 
-    Used when: GET /api/v1/accounts (with balance calculation)
-    Balance = opening_balance + sum(transactions)
+    API Contract: docs/backend/api-contracts.md
     """
 
-    current_balance: Decimal = Field(
-        ..., description="Current balance (opening + all transactions)"
-    )
+    accounts: list[AccountResponse] = Field(..., description="List of user's accounts")
+    total_count: int = Field(..., description="Total number of accounts")
 
     class Config:
-        from_attributes = True
         json_schema_extra = {
             "example": {
-                "id": "123e4567-e89b-12d3-a456-426614174000",
-                "user_id": "987fcdeb-51a2-43f1-9876-543210fedcba",
-                "name": "HDFC Savings Account",
-                "currency": "INR",
-                "opening_balance": 5000.00,
-                "current_balance": 4200.50,
-                "created_at": "2024-01-15T10:30:00Z",
+                "accounts": [
+                    {
+                        "id": "550e8400-e29b-41d4-a716-446655440000",
+                        "name": "Emergency Fund",
+                        "currency": "INR",
+                        "opening_balance": "50000.00",
+                        "current_balance": "48200.50",
+                        "created_at": "2026-01-12T10:30:00Z",
+                    },
+                    {
+                        "id": "660e8400-e29b-41d4-a716-446655440111",
+                        "name": "Checking",
+                        "currency": "INR",
+                        "opening_balance": "5000.00",
+                        "current_balance": "7850.25",
+                        "created_at": "2026-01-01T08:00:00Z",
+                    },
+                ],
+                "total_count": 2,
             }
         }
