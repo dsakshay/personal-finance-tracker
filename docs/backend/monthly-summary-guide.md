@@ -56,7 +56,7 @@ Net change: ₹0
 
 **If we counted transfers as income/expense:**
 ```
-❌ Wrong:
+ Wrong:
 Income: +₹1,000 (credit to B)
 Expenses: -₹1,000 (debit from A)
 Net: ₹0 (correct by accident, but misleading)
@@ -66,7 +66,7 @@ User sees: "I earned ₹1,000 income!" (false)
 
 **Correct approach:**
 ```
-✅ Right:
+ Right:
 Income: ₹0
 Expenses: ₹0
 Net: ₹0
@@ -249,12 +249,12 @@ Actually, let's recalculate properly:
 # After January:
 Account A: ₹5,000 + ₹50,000 - ₹2,000 - ₹1,000 - ₹10,000 - ₹500 - ₹3,000 = ₹38,500
 Account B: ₹3,000 + ₹10,000 = ₹13,000
-Total: ₹51,500 ✓
+Total: ₹51,500 
 
 # After February:
 Account A: ₹38,500 + ₹50,000 - ₹2,500 - ₹1,200 - ₹5,000 - ₹800 = ₹79,000
 Account B: ₹13,000 + ₹5,000 = ₹18,000
-Total: ₹97,000 ✓
+Total: ₹97,000 
 ```
 
 ---
