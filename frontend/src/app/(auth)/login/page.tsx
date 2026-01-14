@@ -40,12 +40,12 @@ export default function LoginPage() {
     <Card>
       <div className="mb-4">
         <div className="text-lg font-semibold">Login</div>
-        <div className="text-sm text-neutral-600">Use your email/password to get a JWT token.</div>
+        <div className="text-sm text-neutral-800">Use your email/password to get a JWT token.</div>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-3">
         <div className="space-y-1">
-          <label className="text-sm font-medium">Email</label>
+          <label className="text-sm font-medium text-neutral-900">Email</label>
           <Input
             type="email"
             value={email}
@@ -55,7 +55,7 @@ export default function LoginPage() {
           />
         </div>
         <div className="space-y-1">
-          <label className="text-sm font-medium">Password</label>
+          <label className="text-sm font-medium text-neutral-900">Password</label>
           <Input
             type="password"
             value={password}
@@ -74,9 +74,9 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <div className="mt-4 text-sm text-neutral-700">
+      <div className="mt-4 text-sm text-neutral-900">
         No account?{" "}
-        <Link className="underline" href="/signup">
+        <Link className="underline font-medium" href="/signup">
           Sign up
         </Link>
       </div>

@@ -28,7 +28,7 @@ export default function DashboardPage() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <div className="text-lg font-semibold">Dashboard</div>
-          <div className="text-sm text-neutral-600">Monthly summary</div>
+          <div className="text-sm text-neutral-800">Monthly summary</div>
         </div>
         <div className="flex items-center gap-2">
           <input
@@ -65,7 +65,7 @@ export default function DashboardPage() {
 
       <Card>
         {q.isLoading ? (
-          <div className="text-sm text-neutral-600">Loading summary…</div>
+          <div className="text-sm text-neutral-800">Loading summary…</div>
         ) : q.isError ? (
           <div className="text-sm text-red-700">Failed to load summary.</div>
         ) : (
@@ -97,7 +97,7 @@ export default function DashboardPage() {
           <Card>
             <div className="mb-3 text-sm font-semibold">Top tags</div>
             {q.data.by_tag.length === 0 ? (
-              <div className="text-sm text-neutral-600">No tagged activity this month.</div>
+              <div className="text-sm text-neutral-800">No tagged activity this month.</div>
             ) : (
               <div className="space-y-2">
                 {q.data.by_tag.slice(0, 6).map((t) => (
@@ -118,7 +118,7 @@ export default function DashboardPage() {
           <Card>
             <div className="mb-3 text-sm font-semibold">Top expenses</div>
             {q.data.top_expenses.length === 0 ? (
-              <div className="text-sm text-neutral-600">No expenses this month.</div>
+              <div className="text-sm text-neutral-800">No expenses this month.</div>
             ) : (
               <div className="space-y-2">
                 {q.data.top_expenses.map((e) => (

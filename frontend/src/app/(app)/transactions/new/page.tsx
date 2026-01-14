@@ -85,7 +85,7 @@ export default function NewTransactionPage() {
     <div className="space-y-4">
       <div>
         <div className="text-lg font-semibold">New transaction</div>
-        <div className="text-sm text-neutral-600">
+        <div className="text-sm text-neutral-800">
           Amount must be positive; backend applies sign (expense becomes negative).
         </div>
       </div>
@@ -93,7 +93,7 @@ export default function NewTransactionPage() {
       <Card>
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1">
-            <div className="text-xs font-medium text-neutral-600">Type</div>
+            <div className="text-xs font-medium text-neutral-800">Type</div>
             <select
               className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
               value={mode}
@@ -111,7 +111,7 @@ export default function NewTransactionPage() {
           </div>
 
           <div className="space-y-1">
-            <div className="text-xs font-medium text-neutral-600">Date</div>
+            <div className="text-xs font-medium text-neutral-800">Date</div>
             <Input
               type="date"
               value={transactionDate}
@@ -121,7 +121,7 @@ export default function NewTransactionPage() {
           </div>
 
           <div className="space-y-1">
-            <div className="text-xs font-medium text-neutral-600">Amount</div>
+            <div className="text-xs font-medium text-neutral-800">Amount</div>
             <Input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -135,7 +135,7 @@ export default function NewTransactionPage() {
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <div className="text-xs font-medium text-neutral-600">{mode === "transfer" ? "From account" : "Account"}</div>
+            <div className="text-xs font-medium text-neutral-800">{mode === "transfer" ? "From account" : "Account"}</div>
             <select
               className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
               value={accountId}
@@ -155,7 +155,7 @@ export default function NewTransactionPage() {
 
           {mode === "transfer" ? (
             <div className="space-y-1">
-              <div className="text-xs font-medium text-neutral-600">To account</div>
+              <div className="text-xs font-medium text-neutral-800">To account</div>
               <select
                 className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
                 value={relatedAccountId}
@@ -176,7 +176,7 @@ export default function NewTransactionPage() {
             </div>
           ) : (
             <div className="space-y-1">
-              <div className="text-xs font-medium text-neutral-600">Tag</div>
+              <div className="text-xs font-medium text-neutral-800">Tag</div>
               <Input value={tag} onChange={(e) => setTag(e.target.value)} placeholder="groceries" required />
             </div>
           )}
@@ -184,17 +184,17 @@ export default function NewTransactionPage() {
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <div className="text-xs font-medium text-neutral-600">Payment method (optional)</div>
+            <div className="text-xs font-medium text-neutral-800">Payment method (optional)</div>
             <Input value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} placeholder="card/upi" />
           </div>
           <div className="space-y-1">
-            <div className="text-xs font-medium text-neutral-600">Currency</div>
+            <div className="text-xs font-medium text-neutral-800">Currency</div>
             <Input value={inferredCurrency} disabled />
           </div>
         </div>
 
         <div className="mt-4 space-y-1">
-          <div className="text-xs font-medium text-neutral-600">Description (optional)</div>
+          <div className="text-xs font-medium text-neutral-800">Description (optional)</div>
           <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Notes…" />
         </div>
 

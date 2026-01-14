@@ -42,7 +42,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 })}
               </nav>
               <div className="mt-3 border-t border-neutral-200 pt-3">
-                <div className="mb-2 text-xs text-neutral-600">{user?.email ?? "—"}</div>
+                <div className="mb-2 text-xs text-neutral-800">{user?.email ?? "—"}</div>
                 <Button
                   variant="secondary"
                   className="w-full"

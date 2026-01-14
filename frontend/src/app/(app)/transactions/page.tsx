@@ -36,7 +36,7 @@ export default function TransactionsPage() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <div className="text-lg font-semibold">Transactions</div>
-          <div className="text-sm text-neutral-600">Income, expenses, and transfers.</div>
+          <div className="text-sm text-neutral-800">Income, expenses, and transfers.</div>
         </div>
         <Link
           href="/transactions/new"
@@ -49,11 +49,11 @@ export default function TransactionsPage() {
       <Card>
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1">
-            <div className="text-xs font-medium text-neutral-600">Account ID</div>
+            <div className="text-xs font-medium text-neutral-800">Account ID</div>
             <Input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="uuid (optional)" />
           </div>
           <div className="space-y-1">
-            <div className="text-xs font-medium text-neutral-600">Type</div>
+            <div className="text-xs font-medium text-neutral-800">Type</div>
             <select
               className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
               value={type}
@@ -66,7 +66,7 @@ export default function TransactionsPage() {
             </select>
           </div>
           <div className="space-y-1">
-            <div className="text-xs font-medium text-neutral-600">Tag</div>
+            <div className="text-xs font-medium text-neutral-800">Tag</div>
             <Input value={tag} onChange={(e) => setTag(e.target.value)} placeholder="groceries (optional)" />
           </div>
         </div>
@@ -74,11 +74,11 @@ export default function TransactionsPage() {
 
       <Card>
         {q.isLoading ? (
-          <div className="text-sm text-neutral-600">Loading transactions…</div>
+          <div className="text-sm text-neutral-800">Loading transactions…</div>
         ) : q.isError ? (
           <div className="text-sm text-red-700">Failed to load transactions.</div>
         ) : q.data.transactions.length === 0 ? (
-          <div className="text-sm text-neutral-600">No transactions found.</div>
+          <div className="text-sm text-neutral-800">No transactions found.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -95,7 +95,7 @@ export default function TransactionsPage() {
               <tbody>
                 {q.data.transactions.map((t) => (
                   <tr key={t.id} className="border-t border-neutral-200">
-                    <td className="py-2 pr-3 text-neutral-700">{t.transaction_date}</td>
+                    <td className="py-2 pr-3 text-neutral-900">{t.transaction_date}</td>
                     <td className="py-2 pr-3 text-neutral-900">
                       <div className="font-medium">{t.account_name}</div>
                       {t.related_account_name ? (
@@ -104,9 +104,9 @@ export default function TransactionsPage() {
                         </div>
                       ) : null}
                     </td>
-                    <td className="py-2 pr-3 text-neutral-700">{t.transaction_type}</td>
-                    <td className="py-2 pr-3 text-neutral-700">{t.tag}</td>
-                    <td className="py-2 pr-3 text-neutral-700">{t.description ?? ""}</td>
+                    <td className="py-2 pr-3 text-neutral-900">{t.transaction_type}</td>
+                    <td className="py-2 pr-3 text-neutral-900">{t.tag}</td>
+                    <td className="py-2 pr-3 text-neutral-900">{t.description ?? ""}</td>
                     <td className="py-2 pr-3 text-right font-medium text-neutral-900">
                       {formatMoney(t.amount, { currency: t.currency })}
                     </td>

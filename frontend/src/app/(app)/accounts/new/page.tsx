@@ -43,7 +43,7 @@ export default function NewAccountPage() {
     <div className="space-y-4">
       <div>
         <div className="text-lg font-semibold">New account</div>
-        <div className="text-sm text-neutral-600">Currency is immutable in the MVP.</div>
+        <div className="text-sm text-neutral-800">Currency is immutable in the MVP.</div>
       </div>
 
       <Card>
@@ -82,9 +82,12 @@ export default function NewAccountPage() {
               onChange={(e) => setOpeningBalance(e.target.value)}
               placeholder="0.00"
               inputMode="decimal"
-              pattern="^-?\\d+\\.\\d{2}$"
+              pattern="^-?\d+\.\d{2}$"
+              title="Must be a decimal with exactly 2 decimal places (e.g., 1000.00, -50.25, 0.00)"
             />
-            <div className="text-xs text-neutral-500">Must be a decimal string with 2 places (e.g. 1000.00).</div>
+            <div className="text-xs text-neutral-800">
+              <strong>Format required:</strong> Must have exactly 2 decimal places (e.g., 1000.00 or -50.25)
+            </div>
           </div>
 
           {error ? (

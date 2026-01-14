@@ -35,12 +35,12 @@ export default function SignupPage() {
     <Card>
       <div className="mb-4">
         <div className="text-lg font-semibold">Sign up</div>
-        <div className="text-sm text-neutral-600">Creates an account (then you can login).</div>
+        <div className="text-sm text-neutral-800">Creates an account (then you can login).</div>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-3">
         <div className="space-y-1">
-          <label className="text-sm font-medium">Email</label>
+          <label className="text-sm font-medium text-neutral-900">Email</label>
           <Input
             type="email"
             value={email}
@@ -50,7 +50,7 @@ export default function SignupPage() {
           />
         </div>
         <div className="space-y-1">
-          <label className="text-sm font-medium">Password</label>
+          <label className="text-sm font-medium text-neutral-900">Password</label>
           <Input
             type="password"
             value={password}
@@ -70,9 +70,9 @@ export default function SignupPage() {
         </Button>
       </form>
 
-      <div className="mt-4 text-sm text-neutral-700">
+      <div className="mt-4 text-sm text-neutral-900">
         Already have an account?{" "}
-        <Link className="underline" href="/login">
+        <Link className="underline font-medium" href="/login">
           Login
         </Link>
       </div>

@@ -6,7 +6,7 @@ export default function Home() {
       <div className="mx-auto max-w-3xl px-4 py-16">
         <div className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
           <div className="text-xl font-semibold">Personal Finance Tracker</div>
-          <div className="mt-1 text-sm text-neutral-600">
+          <div className="mt-1 text-sm text-neutral-800">
             MVP frontend for the FastAPI backend.
           </div>
           <div className="mt-6 flex gap-3">

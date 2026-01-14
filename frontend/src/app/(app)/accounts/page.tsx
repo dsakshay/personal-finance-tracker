@@ -18,7 +18,7 @@ export default function AccountsPage() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <div className="text-lg font-semibold">Accounts</div>
-          <div className="text-sm text-neutral-600">Current balances are derived from transactions.</div>
+          <div className="text-sm text-neutral-800">Current balances are derived from transactions.</div>
         </div>
         <Link
           href="/accounts/new"
@@ -30,13 +30,13 @@ export default function AccountsPage() {
 
       <Card>
         {q.isLoading ? (
-          <div className="text-sm text-neutral-600">Loading accounts…</div>
+          <div className="text-sm text-neutral-800">Loading accounts…</div>
         ) : q.isError ? (
           <div className="text-sm text-red-700">Failed to load accounts.</div>
         ) : !q.data ? (
-          <div className="text-sm text-neutral-600">No data.</div>
+          <div className="text-sm text-neutral-800">No data.</div>
         ) : q.data.accounts.length === 0 ? (
-          <div className="text-sm text-neutral-600">
+          <div className="text-sm text-neutral-800">
             No accounts yet. Create your first one.
           </div>
         ) : (
@@ -54,8 +54,8 @@ export default function AccountsPage() {
                 {q.data.accounts.map((a) => (
                   <tr key={a.id} className="border-t border-neutral-200">
                     <td className="py-2 pr-3 font-medium text-neutral-900">{a.name}</td>
-                    <td className="py-2 pr-3 text-neutral-700">{a.currency}</td>
-                    <td className="py-2 pr-3 text-neutral-700">
+                    <td className="py-2 pr-3 text-neutral-900">{a.currency}</td>
+                    <td className="py-2 pr-3 text-neutral-900">
                       {formatMoney(a.opening_balance, { currency: a.currency })}
                     </td>
                     <td className="py-2 pr-3 text-neutral-900">
