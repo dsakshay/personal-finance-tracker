@@ -6,13 +6,13 @@ This project includes convenience scripts to manage all services (PostgreSQL, Ba
 
 ```bash
 # Start all services
-./start.sh
+./scripts/start.sh
 
 # Check status
-./status.sh
+./scripts/status.sh
 
 # Stop all services
-./stop.sh
+./scripts/stop.sh
 ```
 
 ## Scripts Overview
@@ -31,7 +31,7 @@ Starts all services in the correct order:
 
 **Usage:**
 ```bash
-./start.sh
+./scripts/start.sh
 ```
 
 ### 🛑 `stop.sh`
@@ -47,7 +47,7 @@ Gracefully stops all services:
 
 **Usage:**
 ```bash
-./stop.sh
+./scripts/stop.sh
 ```
 
 ### 📊 `status.sh`
@@ -59,7 +59,7 @@ Check the status of all services:
 
 **Usage:**
 ```bash
-./status.sh
+./scripts/status.sh
 ```
 
 ## Service URLs
@@ -75,10 +75,10 @@ When running:
 View real-time logs:
 ```bash
 # Backend logs
-tail -f logs/backend.log
+docker-compose -f docker/docker-compose.dev.yml logs -f backend.log
 
 # Frontend logs
-tail -f logs/frontend.log
+docker-compose -f docker/docker-compose.dev.yml logs -f frontend.log
 ```
 
 ## Data Persistence
@@ -93,11 +93,11 @@ tail -f logs/frontend.log
 ### Services won't start
 ```bash
 # Check what's already running
-./status.sh
+./scripts/status.sh
 
 # Stop everything and restart
-./stop.sh
-./start.sh
+./scripts/stop.sh
+./scripts/start.sh
 ```
 
 ### Port already in use
@@ -122,14 +122,14 @@ docker restart finance-postgres
 ### Reset everything (DANGER - deletes data!)
 ```bash
 # Stop all services
-./stop.sh
+./scripts/stop.sh
 
 # Remove PostgreSQL container and volume
 docker rm -f finance-postgres
 docker volume rm finance-tracker-data
 
 # Start fresh
-./start.sh
+./scripts/start.sh
 ```
 
 ## Manual Service Management
