@@ -63,34 +63,89 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <Card>
-        {q.isLoading ? (
+      {/* Total Balance - Center Display */}
+      {q.isLoading ? (
+        <Card>
           <div className="text-sm text-neutral-800">Loading summary…</div>
-        ) : q.isError ? (
+        </Card>
+      ) : q.isError ? (
+        <Card>
           <div className="text-sm text-red-700">Failed to load summary.</div>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <div className="text-xs text-neutral-500">Total income</div>
-              <div className="text-lg font-semibold">
-                {formatMoney(q.data.summary.total_income, { currency: q.data.summary.currency })}
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <div className="text-center">
+              <div className="text-sm text-neutral-600 mb-2">Total Balance (Current Month End)</div>
+              <div className="text-4xl font-bold text-neutral-900">
+                {formatMoney(
+                  q.data.by_account.reduce((sum, acc) => sum + parseFloat(acc.closing_balance), 0).toFixed(2),
+                  { currency: q.data.summary.currency }
+                )}
               </div>
             </div>
-            <div>
-              <div className="text-xs text-neutral-500">Total expenses</div>
-              <div className="text-lg font-semibold">
-                {formatMoney(q.data.summary.total_expenses, { currency: q.data.summary.currency })}
+          </Card>
+
+          {/* Overall Summary */}
+          <Card>
+            <div className="mb-3 text-sm font-semibold">Monthly Overview</div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <div className="text-xs text-neutral-600">Total income</div>
+                <div className="text-lg font-semibold text-green-600">
+                  {formatMoney(q.data.summary.total_income, { currency: q.data.summary.currency })}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-neutral-600">Total expenses</div>
+                <div className="text-lg font-semibold text-red-600">
+                  {formatMoney(q.data.summary.total_expenses, { currency: q.data.summary.currency })}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-neutral-600">Net savings</div>
+                <div className="text-lg font-semibold text-blue-600">
+                  {formatMoney(q.data.summary.net_savings, { currency: q.data.summary.currency })}
+                </div>
               </div>
             </div>
-            <div>
-              <div className="text-xs text-neutral-500">Net savings</div>
-              <div className="text-lg font-semibold">
-                {formatMoney(q.data.summary.net_savings, { currency: q.data.summary.currency })}
+          </Card>
+
+          {/* Per Account Breakdown */}
+          {q.data.by_account.length > 0 && (
+            <Card>
+              <div className="mb-3 text-sm font-semibold">By Account</div>
+              <div className="space-y-4">
+                {q.data.by_account.map((acc) => (
+                  <div key={acc.account_id} className="border-b border-neutral-200 pb-3 last:border-0">
+                    <div className="mb-2 font-medium text-neutral-900">{acc.account_name}</div>
+                    <div className="grid gap-3 sm:grid-cols-4 text-sm">
+                      <div>
+                        <div className="text-xs text-neutral-600">Opening</div>
+                        <div className="font-medium">{formatMoney(acc.opening_balance, { currency: acc.currency })}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-600">Current</div>
+                        <div className="font-medium">{formatMoney(acc.closing_balance, { currency: acc.currency })}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-600">Net Change</div>
+                        <div className={`font-medium ${parseFloat(acc.net_change) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatMoney(acc.net_change, { currency: acc.currency })}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-600">Transactions</div>
+                        <div className="font-medium">{acc.transaction_count}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          </div>
-        )}
-      </Card>
+            </Card>
+          )}
+        </>
+      )}
 
       {q.data ? (
         <div className="grid gap-4 md:grid-cols-2">

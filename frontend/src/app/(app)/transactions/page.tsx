@@ -7,6 +7,7 @@ import { api } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/queryKeys";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { formatMoney } from "@/lib/money/money";
 import type { TransactionType } from "@/lib/api/types";
 
@@ -31,6 +32,19 @@ export default function TransactionsPage() {
     queryFn: () => api.transactions.list(params),
   });
 
+  const accountsQ = useQuery({
+    queryKey: queryKeys.accounts.list({}),
+    queryFn: () => api.accounts.list(),
+  });
+
+  const clearFilters = () => {
+    setAccountId("");
+    setTag("");
+    setType("");
+  };
+
+  const hasActiveFilters = accountId || tag || type;
+
   return (
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3">
@@ -47,10 +61,29 @@ export default function TransactionsPage() {
       </div>
 
       <Card>
+        <div className="mb-3 flex items-center justify-between">
+          <div className="text-sm font-semibold">Filters</div>
+          {hasActiveFilters && (
+            <Button variant="secondary" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          )}
+        </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1">
-            <div className="text-xs font-medium text-neutral-800">Account ID</div>
-            <Input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="uuid (optional)" />
+            <div className="text-xs font-medium text-neutral-800">Account</div>
+            <select
+              className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+            >
+              <option value="">All accounts</option>
+              {accountsQ.data?.accounts.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} ({acc.currency})
+                </option>
+              ))}
+            </select>
           </div>
           <div className="space-y-1">
             <div className="text-xs font-medium text-neutral-800">Type</div>
@@ -59,7 +92,7 @@ export default function TransactionsPage() {
               value={type}
               onChange={(e) => setType(e.target.value as any)}
             >
-              <option value="">All</option>
+              <option value="">All types</option>
               <option value="income">Income</option>
               <option value="expense">Expense</option>
               <option value="transfer">Transfer</option>
@@ -67,7 +100,7 @@ export default function TransactionsPage() {
           </div>
           <div className="space-y-1">
             <div className="text-xs font-medium text-neutral-800">Tag</div>
-            <Input value={tag} onChange={(e) => setTag(e.target.value)} placeholder="groceries (optional)" />
+            <Input value={tag} onChange={(e) => setTag(e.target.value)} placeholder="Search by tag..." />
           </div>
         </div>
       </Card>
