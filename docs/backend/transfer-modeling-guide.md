@@ -1,57 +1,57 @@
-# Transfer Modeling Guide
+ Transfer Modeling Guide
 
-## Overview
+ Overview
 
-This document explains why transfers are modeled as **two separate transactions** instead of a single transaction, and how **atomicity** prevents money loss or duplication.
+This document explains why transfers are modeled as two separate transactions instead of a single transaction, and how atomicity prevents money loss or duplication.
 
 ---
 
-## The Transfer Problem
+ The Transfer Problem
 
-### What is a Transfer?
+ What is a Transfer?
 
 A transfer moves money from one account to another:
 
 ```
-Account A (Checking):     ₹10,000
-                           ↓ Transfer ₹1,000
-Account B (Savings):      ₹5,000
+Account A (Checking):     ₹,
+                           ↓ Transfer ₹,
+Account B (Savings):      ₹,
 
 After transfer:
-Account A (Checking):     ₹9,000  (decreased by ₹1,000)
-Account B (Savings):      ₹6,000  (increased by ₹1,000)
+Account A (Checking):     ₹,  (decreased by ₹,)
+Account B (Savings):      ₹,  (increased by ₹,)
 ```
 
-### Design Question: How to Model This?
+ Design Question: How to Model This?
 
-**Option 1: Single Transaction** ❌
+Option : Single Transaction 
 ```
 Transaction:
-  amount: ₹1,000
+  amount: ₹,
   from_account: A
   to_account: B
 ```
 
-**Problems:**
+Problems:
 - How does this affect account balances?
 - `SELECT SUM(amount) FROM transactions WHERE account_id = A` doesn't work
 - Need special logic to handle transfers differently
 - Balance calculation becomes complex
 
-**Option 2: Two Linked Transactions** ✅
+Option : Two Linked Transactions 
 ```
-Transaction 1 (Debit):
+Transaction  (Debit):
   account_id: A
-  amount: -₹1,000
+  amount: -₹,
   related_account_id: B
 
-Transaction 2 (Credit):
+Transaction  (Credit):
   account_id: B
-  amount: +₹1,000
+  amount: +₹,
   related_account_id: A
 ```
 
-**Benefits:**
+Benefits:
 - Each account has its own transaction record
 - Balance calculation is always: `opening_balance + SUM(amounts)`
 - No special cases for transfers
@@ -59,215 +59,215 @@ Transaction 2 (Credit):
 
 ---
 
-## Why Two Transactions?
+ Why Two Transactions?
 
-### 1. Consistent Balance Calculation
+ . Consistent Balance Calculation
 
-**With two transactions:**
+With two transactions:
 
 ```python
-# Account A balance:
-opening_balance_A = 10000  # ₹10,000
-transactions_A = [-1000]    # Transfer out
-current_balance_A = 10000 + (-1000) = 9000  # ✅ Correct
+ Account A balance:
+opening_balance_A =    ₹,
+transactions_A = [-]     Transfer out
+current_balance_A =  + (-) =     Correct
 
-# Account B balance:
-opening_balance_B = 5000   # ₹5,000
-transactions_B = [+1000]   # Transfer in
-current_balance_B = 5000 + 1000 = 6000  # ✅ Correct
+ Account B balance:
+opening_balance_B =     ₹,
+transactions_B = [+]    Transfer in
+current_balance_B =  +  =     Correct
 ```
 
-**SQL is simple:**
+SQL is simple:
 ```sql
 -- Balance for any account (income, expense, transfer - all the same)
-SELECT opening_balance_minor + COALESCE(SUM(amount_minor), 0)
+SELECT opening_balance_minor + COALESCE(SUM(amount_minor), )
 FROM accounts a
 LEFT JOIN transactions t ON t.account_id = a.id
 WHERE a.id = ?
 GROUP BY a.id;
 ```
 
-**With single transaction:**
+With single transaction:
 ```python
-# Would need complex logic:
+ Would need complex logic:
 if transaction.type == TRANSFER:
     if transaction.from_account == account_id:
-        balance -= transaction.amount  # Subtract
+        balance -= transaction.amount   Subtract
     elif transaction.to_account == account_id:
-        balance += transaction.amount  # Add
+        balance += transaction.amount   Add
 else:
-    balance += transaction.amount  # Regular logic
+    balance += transaction.amount   Regular logic
 ```
 
-### 2. Transaction History Per Account
+ . Transaction History Per Account
 
-**Each account has complete history:**
+Each account has complete history:
 
 ```python
-# Account A transactions:
+ Account A transactions:
 GET /transactions?account_id=A
 
 [
-  {"date": "2026-01-12", "amount": "-1000.00", "type": "transfer", "related": "B"},
-  {"date": "2026-01-10", "amount": "-500.00", "type": "expense", "tag": "groceries"},
-  {"date": "2026-01-01", "amount": "50000.00", "type": "income", "tag": "salary"},
+  {"date": "--", "amount": "-.", "type": "transfer", "related": "B"},
+  {"date": "--", "amount": "-.", "type": "expense", "tag": "groceries"},
+  {"date": "--", "amount": ".", "type": "income", "tag": "salary"},
 ]
 
-# All transactions affecting Account A are visible
-# No need to query "other accounts" to see impact
+ All transactions affecting Account A are visible
+ No need to query "other accounts" to see impact
 ```
 
-### 3. Audit Trail and Transparency
+ . Audit Trail and Transparency
 
-**Users see money leaving AND arriving:**
+Users see money leaving AND arriving:
 
 ```
 User's account list:
-- Checking (A):  Shows -₹1,000 (outgoing transfer to Savings)
-- Savings (B):   Shows +₹1,000 (incoming transfer from Checking)
+- Checking (A):  Shows -₹, (outgoing transfer to Savings)
+- Savings (B):   Shows +₹, (incoming transfer from Checking)
 
 vs. single transaction:
 - Where does it show up? In Checking? Savings? Both?
 - How do you display it differently in each account's view?
 ```
 
-### 4. Double-Entry Bookkeeping
+ . Double-Entry Bookkeeping
 
-**Accounting principle:** Every transaction has equal and opposite effects
+Accounting principle: Every transaction has equal and opposite effects
 
 ```
 Traditional accounting:
-  Debit: Checking Account    ₹1,000 (decrease asset)
-  Credit: Savings Account    ₹1,000 (increase asset)
+  Debit: Checking Account    ₹, (decrease asset)
+  Credit: Savings Account    ₹, (increase asset)
 
 Our implementation:
-  Transaction 1: Checking    -₹1,000 (debit)
-  Transaction 2: Savings     +₹1,000 (credit)
+  Transaction : Checking    -₹, (debit)
+  Transaction : Savings     +₹, (credit)
 ```
 
-**Verification:**
+Verification:
 ```python
-# For any transfer, verify:
-debit_transaction.amount + credit_transaction.amount == 0
+ For any transfer, verify:
+debit_transaction.amount + credit_transaction.amount == 
 
-# Example:
--1000 + 1000 = 0  ✅ Balanced
+ Example:
+- +  =    Balanced
 ```
 
-### 5. Related Account Tracking
+ . Related Account Tracking
 
-**linked via `related_account_id`:**
+linked via `related_account_id`:
 
 ```python
-# From transaction, navigate to the other side:
+ From transaction, navigate to the other side:
 transfer_out = Transaction(
     account_id="A",
-    amount=-1000,
-    related_account_id="B",  # Points to destination
+    amount=-,
+    related_account_id="B",   Points to destination
 )
 
 transfer_in = Transaction(
     account_id="B",
-    amount=1000,
-    related_account_id="A",  # Points to source
+    amount=,
+    related_account_id="A",   Points to source
 )
 
-# Frontend can display:
-"Transfer to Savings (B)"  # From transfer_out.related_account
-"Transfer from Checking (A)"  # From transfer_in.related_account
+ Frontend can display:
+"Transfer to Savings (B)"   From transfer_out.related_account
+"Transfer from Checking (A)"   From transfer_in.related_account
 ```
 
 ---
 
-## Atomicity: Preventing Money Loss
+ Atomicity: Preventing Money Loss
 
-### The Problem
+ The Problem
 
-**What if we create two transactions separately?**
+What if we create two transactions separately?
 
 ```python
-# ❌ DANGEROUS: Non-atomic approach
-debit = Transaction(account_id=A, amount=-1000)
+  DANGEROUS: Non-atomic approach
+debit = Transaction(account_id=A, amount=-)
 db.add(debit)
-db.commit()  # ⚠️ Committed!
+db.commit()   ️ Committed!
 
-# 💥 Server crashes here!
+  Server crashes here!
 
-credit = Transaction(account_id=B, amount=1000)
+credit = Transaction(account_id=B, amount=)
 db.add(credit)
-db.commit()  # Never reached!
+db.commit()   Never reached!
 ```
 
-**Result:**
-- Debit transaction saved: Account A lost ₹1,000 ❌
-- Credit transaction NOT saved: Account B never received ₹1,000 ❌
-- **Money disappeared!** 💸
+Result:
+- Debit transaction saved: Account A lost ₹, 
+- Credit transaction NOT saved: Account B never received ₹, 
+- Money disappeared! 
 
-### The Solution: Atomic Transactions
+ The Solution: Atomic Transactions
 
-**Database Transaction:** All-or-nothing operation
+Database Transaction: All-or-nothing operation
 
 ```python
-# ✅ SAFE: Atomic approach
+  SAFE: Atomic approach
 try:
-    # Start transaction (implicit with SQLAlchemy session)
-    debit = Transaction(account_id=A, amount=-1000)
-    credit = Transaction(account_id=B, amount=1000)
+     Start transaction (implicit with SQLAlchemy session)
+    debit = Transaction(account_id=A, amount=-)
+    credit = Transaction(account_id=B, amount=)
 
     db.add(debit)
     db.add(credit)
 
-    # Single commit: Both or neither
-    db.commit()  # ✅ Both saved together
+     Single commit: Both or neither
+    db.commit()    Both saved together
 
 except Exception as e:
-    db.rollback()  # ❌ Neither saved
+    db.rollback()    Neither saved
     raise
 ```
 
-**Result:**
-- If commit succeeds: Both transactions saved ✅
-- If any error occurs: Both transactions rolled back ✅
-- **Money never lost or duplicated!** 💰
+Result:
+- If commit succeeds: Both transactions saved 
+- If any error occurs: Both transactions rolled back 
+- Money never lost or duplicated! 
 
-### Database Transaction Guarantees (ACID)
+ Database Transaction Guarantees (ACID)
 
-#### A - Atomicity
-**All or nothing:** Both transactions are saved together, or both are discarded.
+ A - Atomicity
+All or nothing: Both transactions are saved together, or both are discarded.
 
 ```python
-# Case 1: Success
+ Case : Success
 db.commit()
-# → Both debit and credit saved ✅
+ → Both debit and credit saved 
 
-# Case 2: Failure (constraint violation, network error, etc.)
-db.commit()  # Raises exception
-# → Automatic rollback, both discarded ✅
+ Case : Failure (constraint violation, network error, etc.)
+db.commit()   Raises exception
+ → Automatic rollback, both discarded 
 
-# Case 3: Explicit rollback
+ Case : Explicit rollback
 db.rollback()
-# → Both discarded ✅
+ → Both discarded 
 ```
 
-#### C - Consistency
-**Database remains valid:** No broken constraints.
+ C - Consistency
+Database remains valid: No broken constraints.
 
 ```python
-# Foreign key constraints enforced:
+ Foreign key constraints enforced:
 debit = Transaction(account_id="INVALID_UUID", ...)
 credit = Transaction(account_id=B, ...)
 
 db.commit()
-# → IntegrityError: Foreign key violation
-# → Automatic rollback, BOTH discarded ✅
+ → IntegrityError: Foreign key violation
+ → Automatic rollback, BOTH discarded 
 ```
 
-#### I - Isolation
-**Concurrent transfers don't interfere:**
+ I - Isolation
+Concurrent transfers don't interfere:
 
 ```
-User A transfers ₹1,000: A → B
-User B transfers ₹500:  A → C
+User A transfers ₹,: A → B
+User B transfers ₹:  A → C
 
 Both happen at same time (concurrently)
 
@@ -277,131 +277,131 @@ Database ensures:
 - No partial states visible
 ```
 
-#### D - Durability
-**Once committed, data persists:**
+ D - Durability
+Once committed, data persists:
 
 ```python
 db.commit()
-# → Data written to disk
-# → Even if server crashes immediately after, data is safe ✅
+ → Data written to disk
+ → Even if server crashes immediately after, data is safe 
 ```
 
 ---
 
-## Implementation Details
+ Implementation Details
 
-### Code Location
+ Code Location
 
-[routers/transactions.py:284-328](/home/akshay/personal-meta/personal-projects/apps/personal-finance-tracker/backend/app/routers/transactions.py#L284-L328)
+[routers/transactions.py:-](/home/akshay/personal-meta/personal-projects/apps/personal-finance-tracker/backend/app/routers/transactions.pyL-L)
 
-### Step-by-Step Flow
+ Step-by-Step Flow
 
-#### Step 1: Validation
+ Step : Validation
 
 ```python
-# Prevent future transfers
+ Prevent future transfers
 if transfer_data.transaction_date > today:
-    raise HTTPException(400, "Cannot transfer in the future")
+    raise HTTPException(, "Cannot transfer in the future")
 
-# Prevent same-account transfers
+ Prevent same-account transfers
 if from_account_id == to_account_id:
-    raise HTTPException(400, "Cannot transfer to same account")
+    raise HTTPException(, "Cannot transfer to same account")
 ```
 
-#### Step 2: Authorization
+ Step : Authorization
 
 ```python
-# Both accounts must belong to current user
+ Both accounts must belong to current user
 from_account = db.query(Account).filter(
     Account.id == from_account_id,
-    Account.user_id == current_user.id,  # 🔒 Security!
+    Account.user_id == current_user.id,    Security!
 ).first()
 
 to_account = db.query(Account).filter(
     Account.id == to_account_id,
-    Account.user_id == current_user.id,  # 🔒 Security!
+    Account.user_id == current_user.id,    Security!
 ).first()
 
 if not from_account or not to_account:
-    raise HTTPException(404, "Account(s) not found")
+    raise HTTPException(, "Account(s) not found")
 ```
 
-**Why both must belong to same user:**
+Why both must belong to same user:
 - Prevent stealing money from other users!
 - User A cannot transfer from User B's account to User A's account
 - Authorization check happens BEFORE any database changes
 
-#### Step 3: Currency Validation
+ Step : Currency Validation
 
 ```python
-# Currencies must match
+ Currencies must match
 if from_account.currency != to_account.currency:
-    raise HTTPException(400, f"Currency mismatch: {from_account.currency} ≠ {to_account.currency}")
+    raise HTTPException(, f"Currency mismatch: {from_account.currency} ≠ {to_account.currency}")
 
 if transfer_currency != from_account.currency:
-    raise HTTPException(400, f"Transfer currency must match accounts")
+    raise HTTPException(, f"Transfer currency must match accounts")
 ```
 
-**Why:**
-- Cannot transfer ₹1,000 from INR account to USD account
+Why:
+- Cannot transfer ₹, from INR account to USD account
 - Prevents currency conversion issues (out of scope for MVP)
 - Future enhancement: Support multi-currency transfers with exchange rates
 
-#### Step 4: Create Both Transactions
+ Step : Create Both Transactions
 
 ```python
-# Transaction 1: Debit (money leaving source account)
+ Transaction : Debit (money leaving source account)
 debit = Transaction(
     user_id=current_user.id,
     account_id=from_account_id,
-    amount_minor=-amount_minor,  # Negative!
+    amount_minor=-amount_minor,   Negative!
     currency=currency,
     transaction_type=TransactionType.TRANSFER,
-    related_account_id=to_account_id,  # Link to destination
+    related_account_id=to_account_id,   Link to destination
     ...
 )
 
-# Transaction 2: Credit (money arriving at destination account)
+ Transaction : Credit (money arriving at destination account)
 credit = Transaction(
     user_id=current_user.id,
     account_id=to_account_id,
-    amount_minor=amount_minor,  # Positive!
+    amount_minor=amount_minor,   Positive!
     currency=currency,
     transaction_type=TransactionType.TRANSFER,
-    related_account_id=from_account_id,  # Link to source
+    related_account_id=from_account_id,   Link to source
     ...
 )
 ```
 
-**Key points:**
+Key points:
 - `amount_minor` is negative for debit, positive for credit
 - `related_account_id` creates bidirectional link
 - Both have same `user_id`, `currency`, `transaction_date`, `description`
 
-#### Step 5: Atomic Commit
+ Step : Atomic Commit
 
 ```python
 try:
-    # Add both to session (staged, not yet in database)
+     Add both to session (staged, not yet in database)
     db.add(debit)
     db.add(credit)
 
-    # Commit both together (ATOMIC!)
+     Commit both together (ATOMIC!)
     db.commit()
 
-    # Refresh to get generated IDs and timestamps
+     Refresh to get generated IDs and timestamps
     db.refresh(debit)
     db.refresh(credit)
 
     return [debit, credit]
 
 except IntegrityError as e:
-    # Automatic rollback on error
+     Automatic rollback on error
     db.rollback()
-    raise HTTPException(400, f"Database error: {e}")
+    raise HTTPException(, f"Database error: {e}")
 ```
 
-**What happens during commit:**
+What happens during commit:
 
 ```sql
 -- PostgreSQL executes:
@@ -412,7 +412,7 @@ VALUES (
   'uuid-debit',
   'user-id',
   'account-A',
-  -100000,  -- -₹1,000
+  -,  -- -₹,
   ...
 );
 
@@ -421,7 +421,7 @@ VALUES (
   'uuid-credit',
   'user-id',
   'account-B',
-  100000,  -- +₹1,000
+  ,  -- +₹,
   ...
 );
 
@@ -432,140 +432,140 @@ ROLLBACK;  -- Both discarded together!
 
 ---
 
-## Failure Scenarios
+ Failure Scenarios
 
-### Scenario 1: Network Failure During Commit
+ Scenario : Network Failure During Commit
 
-**What happens:**
+What happens:
 ```python
 db.add(debit)
 db.add(credit)
-db.commit()  # Network error!
-# → PostgreSQL never receives commit
-# → Automatic rollback after timeout
-# → Both transactions discarded ✅
+db.commit()   Network error!
+ → PostgreSQL never receives commit
+ → Automatic rollback after timeout
+ → Both transactions discarded 
 ```
 
-**Result:** No money moved, both accounts unchanged ✅
+Result: No money moved, both accounts unchanged 
 
-### Scenario 2: Constraint Violation
+ Scenario : Constraint Violation
 
-**What happens:**
+What happens:
 ```python
-debit = Transaction(account_id="INVALID", ...)  # Invalid foreign key
+debit = Transaction(account_id="INVALID", ...)   Invalid foreign key
 credit = Transaction(account_id=B, ...)
 
 db.add(debit)
 db.add(credit)
-db.commit()  # IntegrityError!
-# → PostgreSQL rejects invalid debit
-# → Automatic rollback
-# → Credit is also discarded ✅
+db.commit()   IntegrityError!
+ → PostgreSQL rejects invalid debit
+ → Automatic rollback
+ → Credit is also discarded 
 ```
 
-**Result:** Neither transaction saved, both accounts unchanged ✅
+Result: Neither transaction saved, both accounts unchanged 
 
-### Scenario 3: Server Crash After Commit
+ Scenario : Server Crash After Commit
 
-**What happens:**
+What happens:
 ```python
-db.commit()  # ✅ Success!
-# Data written to PostgreSQL
-# 💥 Server crashes here!
+db.commit()    Success!
+ Data written to PostgreSQL
+  Server crashes here!
 
-# Later, server restarts:
-# → PostgreSQL has both transactions ✅
-# → Data is durable (ACID: Durability)
+ Later, server restarts:
+ → PostgreSQL has both transactions 
+ → Data is durable (ACID: Durability)
 ```
 
-**Result:** Both transactions saved, transfer completed ✅
+Result: Both transactions saved, transfer completed 
 
-### Scenario 4: Concurrent Transfers
+ Scenario : Concurrent Transfers
 
-**What happens:**
+What happens:
 ```
-Time  | User A (Transfer A→B ₹1,000)    | User B (Transfer A→C ₹500)
+Time  | User A (Transfer A→B ₹,)    | User B (Transfer A→C ₹)
 ------|----------------------------------|---------------------------
-T1    | Read Account A: ₹10,000         |
-T2    |                                  | Read Account A: ₹10,000
-T3    | Create debit: A -₹1,000          |
-T4    | Create credit: B +₹1,000         |
-T5    |                                  | Create debit: A -₹500
-T6    |                                  | Create credit: C +₹500
-T7    | COMMIT (both saved)              |
-T8    |                                  | COMMIT (both saved)
+T    | Read Account A: ₹,         |
+T    |                                  | Read Account A: ₹,
+T    | Create debit: A -₹,          |
+T    | Create credit: B +₹,         |
+T    |                                  | Create debit: A -₹
+T    |                                  | Create credit: C +₹
+T    | COMMIT (both saved)              |
+T    |                                  | COMMIT (both saved)
 ```
 
-**Result:**
-- Account A: ₹10,000 - ₹1,000 - ₹500 = ₹8,500 ✅
-- Account B: +₹1,000 ✅
-- Account C: +₹500 ✅
-- Total: ₹10,000 = ₹8,500 + ₹1,000 + ₹500 ✅ Balanced!
+Result:
+- Account A: ₹, - ₹, - ₹ = ₹, 
+- Account B: +₹, 
+- Account C: +₹ 
+- Total: ₹, = ₹, + ₹, + ₹  Balanced!
 
-**Database isolation ensures:**
+Database isolation ensures:
 - No lost updates
 - No dirty reads
 - Consistent state throughout
 
 ---
 
-## Verification and Auditing
+ Verification and Auditing
 
-### 1. Transfer Pair Verification
+ . Transfer Pair Verification
 
-**Check that transfers are balanced:**
+Check that transfers are balanced:
 
 ```sql
 -- Find all transfer transactions
 SELECT
-  t1.id as debit_id,
-  t1.account_id as from_account,
-  t1.amount_minor as debit_amount,
-  t2.id as credit_id,
-  t2.account_id as to_account,
-  t2.amount_minor as credit_amount,
-  (t1.amount_minor + t2.amount_minor) as balance
-FROM transactions t1
-JOIN transactions t2 ON t1.related_account_id = t2.account_id
-  AND t2.related_account_id = t1.account_id
-WHERE t1.transaction_type = 'transfer'
-  AND t2.transaction_type = 'transfer'
-  AND t1.amount_minor < 0  -- Debit only
-HAVING (t1.amount_minor + t2.amount_minor) != 0;
+  t.id as debit_id,
+  t.account_id as from_account,
+  t.amount_minor as debit_amount,
+  t.id as credit_id,
+  t.account_id as to_account,
+  t.amount_minor as credit_amount,
+  (t.amount_minor + t.amount_minor) as balance
+FROM transactions t
+JOIN transactions t ON t.related_account_id = t.account_id
+  AND t.related_account_id = t.account_id
+WHERE t.transaction_type = 'transfer'
+  AND t.transaction_type = 'transfer'
+  AND t.amount_minor <   -- Debit only
+HAVING (t.amount_minor + t.amount_minor) != ;
 
--- Should return 0 rows! (all balanced)
+-- Should return  rows! (all balanced)
 ```
 
-### 2. Orphaned Transfer Detection
+ . Orphaned Transfer Detection
 
-**Find transfers without pairs:**
+Find transfers without pairs:
 
 ```sql
 -- Transfers without matching pair (should never happen!)
-SELECT *
-FROM transactions t1
-WHERE t1.transaction_type = 'transfer'
-  AND t1.related_account_id IS NOT NULL
+SELECT 
+FROM transactions t
+WHERE t.transaction_type = 'transfer'
+  AND t.related_account_id IS NOT NULL
   AND NOT EXISTS (
-    SELECT 1
-    FROM transactions t2
-    WHERE t2.account_id = t1.related_account_id
-      AND t2.related_account_id = t1.account_id
-      AND t2.transaction_type = 'transfer'
+    SELECT 
+    FROM transactions t
+    WHERE t.account_id = t.related_account_id
+      AND t.related_account_id = t.account_id
+      AND t.transaction_type = 'transfer'
   );
 
--- Should return 0 rows!
+-- Should return  rows!
 ```
 
-### 3. Account Balance Verification
+ . Account Balance Verification
 
-**Verify total money in system:**
+Verify total money in system:
 
 ```sql
 -- Sum of all balances should equal sum of opening balances
 SELECT
   SUM(opening_balance_minor) as total_opening,
-  SUM(opening_balance_minor + COALESCE(txn_sum, 0)) as total_current
+  SUM(opening_balance_minor + COALESCE(txn_sum, )) as total_current
 FROM accounts a
 LEFT JOIN (
   SELECT account_id, SUM(amount_minor) as txn_sum
@@ -579,187 +579,187 @@ LEFT JOIN (
 
 ---
 
-## Common Pitfalls (Avoided by Our Design)
+ Common Pitfalls (Avoided by Our Design)
 
-### ❌ Pitfall 1: Separate API Calls
+  Pitfall : Separate API Calls
 
-**Bad approach:**
+Bad approach:
 ```javascript
 // Frontend makes two calls:
 await fetch('/transactions', {
   method: 'POST',
-  body: JSON.stringify({ account_id: A, amount: -1000 })
+  body: JSON.stringify({ account_id: A, amount: - })
 });
 
-// 💥 Network error here!
+//  Network error here!
 
 await fetch('/transactions', {
   method: 'POST',
-  body: JSON.stringify({ account_id: B, amount: 1000 })
+  body: JSON.stringify({ account_id: B, amount:  })
 });
 ```
 
-**Problem:** First call succeeds, second fails → Money lost!
+Problem: First call succeeds, second fails → Money lost!
 
-**Our solution:** Single API call `/transactions/transfer` creates both atomically
+Our solution: Single API call `/transactions/transfer` creates both atomically
 
-### ❌ Pitfall 2: Separate Commits
+  Pitfall : Separate Commits
 
-**Bad approach:**
+Bad approach:
 ```python
-# Create debit
+ Create debit
 db.add(debit)
-db.commit()  # ⚠️ First commit
+db.commit()   ️ First commit
 
-# Create credit
+ Create credit
 db.add(credit)
-db.commit()  # ⚠️ Second commit
+db.commit()   ️ Second commit
 ```
 
-**Problem:** First commit succeeds, second fails → Money lost!
+Problem: First commit succeeds, second fails → Money lost!
 
-**Our solution:** Single `db.commit()` for both transactions
+Our solution: Single `db.commit()` for both transactions
 
-### ❌ Pitfall 3: No Validation
+  Pitfall : No Validation
 
-**Bad approach:**
+Bad approach:
 ```python
-# Skip currency check
-debit = Transaction(account_id=A, currency="INR", amount=-1000)
-credit = Transaction(account_id=B, currency="USD", amount=1000)
+ Skip currency check
+debit = Transaction(account_id=A, currency="INR", amount=-)
+credit = Transaction(account_id=B, currency="USD", amount=)
 db.commit()
 ```
 
-**Problem:** Transfer between incompatible currencies!
+Problem: Transfer between incompatible currencies!
 
-**Our solution:** Validate currencies match BEFORE creating transactions
+Our solution: Validate currencies match BEFORE creating transactions
 
-### ❌ Pitfall 4: No Authorization Check
+  Pitfall : No Authorization Check
 
-**Bad approach:**
+Bad approach:
 ```python
-# Skip ownership check
-from_account = db.get(Account, from_account_id)  # Any user's account!
-to_account = db.get(Account, to_account_id)      # Any user's account!
+ Skip ownership check
+from_account = db.get(Account, from_account_id)   Any user's account!
+to_account = db.get(Account, to_account_id)       Any user's account!
 ```
 
-**Problem:** User A can transfer money out of User B's account!
+Problem: User A can transfer money out of User B's account!
 
-**Our solution:** Verify BOTH accounts belong to current user
-
----
-
-## Benefits Summary
-
-### For Users
-
-✅ **Accurate balances:** Each account shows correct balance
-✅ **Complete history:** See all money in/out of each account
-✅ **Clear audit trail:** "Transfer to Savings" vs "Transfer from Checking"
-✅ **No money loss:** Atomicity prevents partial transfers
-
-### For Developers
-
-✅ **Simple queries:** Balance = `SUM(amounts)` always works
-✅ **No special cases:** Transfers handled like any transaction
-✅ **Type safety:** Enum prevents invalid transfer types
-✅ **Easy debugging:** Two separate records to inspect
-
-### For Business
-
-✅ **Compliance:** Double-entry bookkeeping standard
-✅ **Auditability:** Clear money trail
-✅ **Reliability:** ACID guarantees prevent errors
-✅ **Scalability:** No complex locking needed
+Our solution: Verify BOTH accounts belong to current user
 
 ---
 
-## Future Enhancements
+ Benefits Summary
 
-### 1. Multi-Currency Transfers
+ For Users
+
+ Accurate balances: Each account shows correct balance
+ Complete history: See all money in/out of each account
+ Clear audit trail: "Transfer to Savings" vs "Transfer from Checking"
+ No money loss: Atomicity prevents partial transfers
+
+ For Developers
+
+ Simple queries: Balance = `SUM(amounts)` always works
+ No special cases: Transfers handled like any transaction
+ Type safety: Enum prevents invalid transfer types
+ Easy debugging: Two separate records to inspect
+
+ For Business
+
+ Compliance: Double-entry bookkeeping standard
+ Auditability: Clear money trail
+ Reliability: ACID guarantees prevent errors
+ Scalability: No complex locking needed
+
+---
+
+ Future Enhancements
+
+ . Multi-Currency Transfers
 
 ```python
-# Transfer with exchange rate
+ Transfer with exchange rate
 transfer = Transfer(
-    from_account_id=A,  # INR account
-    to_account_id=B,    # USD account
-    from_amount=8300,   # ₹8,300
-    to_amount=100,      # $100
-    exchange_rate=83.0, # 1 USD = 83 INR
+    from_account_id=A,   INR account
+    to_account_id=B,     USD account
+    from_amount=,    ₹,
+    to_amount=,       $
+    exchange_rate=.,   USD =  INR
 )
 
-# Creates:
-# - Debit:  A, -8300 INR
-# - Credit: B, +100 USD
+ Creates:
+ - Debit:  A, - INR
+ - Credit: B, + USD
 ```
 
-### 2. Transfer Reversal
+ . Transfer Reversal
 
 ```python
-# Create reverse transactions
+ Create reverse transactions
 def reverse_transfer(original_transfer_id):
-    # Find original pair
+     Find original pair
     original_debit, original_credit = get_transfer_pair(original_transfer_id)
 
-    # Create opposite transactions
+     Create opposite transactions
     reversal_debit = create_opposite(original_credit)
     reversal_credit = create_opposite(original_debit)
 
-    # Link to originals
+     Link to originals
     reversal_debit.reversal_of = original_debit.id
     reversal_credit.reversal_of = original_credit.id
 
-    # Commit atomically
+     Commit atomically
     db.commit()
 ```
 
-### 3. Transfer Scheduling
+ . Transfer Scheduling
 
 ```python
-# Schedule future transfer
+ Schedule future transfer
 scheduled_transfer = ScheduledTransfer(
     from_account=A,
     to_account=B,
-    amount=1000,
-    execute_date="2026-02-01",  # Future date
+    amount=,
+    execute_date="--",   Future date
     recurrence="monthly",
 )
 
-# Cron job executes on date:
+ Cron job executes on date:
 if scheduled_transfer.execute_date == today:
-    create_transfer(...)  # Atomic execution
+    create_transfer(...)   Atomic execution
 ```
 
 ---
 
-## Conclusion
+ Conclusion
 
-**Why two transactions:**
-1. Consistent balance calculation
-2. Complete per-account history
-3. Follows accounting principles
-4. Simpler implementation
+Why two transactions:
+. Consistent balance calculation
+. Complete per-account history
+. Follows accounting principles
+. Simpler implementation
 
-**How atomicity prevents money loss:**
-1. Both transactions created in single database transaction
-2. Either both save (success) or both rollback (failure)
-3. No partial states possible
-4. ACID guarantees by PostgreSQL
+How atomicity prevents money loss:
+. Both transactions created in single database transaction
+. Either both save (success) or both rollback (failure)
+. No partial states possible
+. ACID guarantees by PostgreSQL
 
-**Key takeaway:**
+Key takeaway:
 > Transfers are not a special case—they're just two regular transactions that happen to be linked and created atomically.
 
 This design is:
-- ✅ Simple to implement
-- ✅ Easy to reason about
-- ✅ Impossible to lose money
-- ✅ Follows industry standards
+-  Simple to implement
+-  Easy to reason about
+-  Impossible to lose money
+-  Follows industry standards
 
 ---
 
-## Further Reading
+ Further Reading
 
 - [Double-Entry Bookkeeping](https://en.wikipedia.org/wiki/Double-entry_bookkeeping)
 - [ACID Properties](https://en.wikipedia.org/wiki/ACID)
 - [Database Transactions](https://www.postgresql.org/docs/current/tutorial-transactions.html)
-- [ADR-006: Transfer Representation](../adrs/006-transfer-representation.md) (if exists)
+- [ADR-: Transfer Representation](../adrs/-transfer-representation.md) (if exists)

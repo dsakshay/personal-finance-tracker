@@ -1750,12 +1750,12 @@ describe('API Contracts', () => {
 
 ### Key Takeaways
 
-✅ **Human-readable amounts** (`"500.00"` not `50000`)
-✅ **Explicit currency** (always include ISO 4217 code)
-✅ **User from auth token** (not in request body)
-✅ **ISO standards** (dates, timestamps, currency codes)
-✅ **Detailed validation** (prevent bad data early)
-✅ **Rich error messages** (help developers debug)
-✅ **Type-safe** (use TypeScript definitions)
+ **Human-readable amounts** (`"500.00"` not `50000`)
+ **Explicit currency** (always include ISO 4217 code)
+ **User from auth token** (not in request body)
+ **ISO standards** (dates, timestamps, currency codes)
+ **Detailed validation** (prevent bad data early)
+ **Rich error messages** (help developers debug)
+ **Type-safe** (use TypeScript definitions)
 
 **Next steps:** Implement these contracts in FastAPI with Pydantic validation!

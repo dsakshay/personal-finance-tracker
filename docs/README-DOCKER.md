@@ -1,54 +1,54 @@
-#  Docker Deployment Guide
+  Docker Deployment Guide
 
-This project supports both **production** and **development** Docker setups.
+This project supports both production and development Docker setups.
 
-## Quick Start
+ Quick Start
 
-### Production (Optimized)
+ Production (Optimized)
 ```bash
-# Build and start all services
+ Build and start all services
 docker-compose -f docker/docker-compose.yml up -d
 
-# View logs
+ View logs
 docker-compose -f docker/docker-compose.yml logs -f
 
-# Stop all services
+ Stop all services
 docker-compose -f docker/docker-compose.yml down
 ```
 
-### Development (Hot-reload)
+ Development (Hot-reload)
 ```bash
-# Build and start with hot-reload
+ Build and start with hot-reload
 docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d
 
-# View logs
+ View logs
 docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml logs -f
 
-# Stop all services
+ Stop all services
 docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml down
 ```
 
-## Services
+ Services
 
-The application consists of 3 services:
+The application consists of  services:
 
 | Service | Container Name | Port | Description |
 |---------|---------------|------|-------------|
-| **db** | finance-tracker-db | 5432 | PostgreSQL 15 database |
-| **backend** | finance-tracker-backend | 8000 | FastAPI application |
-| **frontend** | finance-tracker-frontend | 3000 | Next.js web app |
+| db | finance-tracker-db |  | PostgreSQL  database |
+| backend | finance-tracker-backend |  | FastAPI application |
+| frontend | finance-tracker-frontend |  | Next.js web app |
 
-## Access URLs
+ Access URLs
 
 Once running:
-- **Frontend:** http://localhost:3000
-- **Backend API:** http://localhost:8000
-- **API Docs:** http://localhost:8000/docs
-- **PostgreSQL:** localhost:5432
+- Frontend: http://localhost:
+- Backend API: http://localhost:
+- API Docs: http://localhost:/docs
+- PostgreSQL: localhost:
 
-## Production vs Development
+ Production vs Development
 
-### Production (`docker-compose.yml`)
+ Production (`docker-compose.yml`)
 -  Optimized builds
 -  Minimal image sizes
 -  No source code mounting
@@ -59,114 +59,114 @@ Once running:
 docker-compose -f docker/docker-compose.yml up -d --build
 ```
 
-### Development (`docker/docker-compose.dev.yml`)
+ Development (`docker/docker-compose.dev.yml`)
 -  Hot-reload enabled
 -  Source code mounted as volumes
 -  Fast iteration
 -  Best for local development
-- ️ Larger image sizes
+- Larger image sizes
 
 ```bash
 docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d --build
 ```
 
-## Common Commands
+ Common Commands
 
-### Build & Start
+ Build & Start
 ```bash
-# Production
+ Production
 docker-compose -f docker/docker-compose.yml up -d --build
 
-# Development
+ Development
 docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d --build
 ```
 
-### View Logs
+ View Logs
 ```bash
-# All services
+ All services
 docker-compose -f docker/docker-compose.yml logs -f
 
-# Specific service
+ Specific service
 docker-compose -f docker/docker-compose.yml logs -f backend
 docker-compose -f docker/docker-compose.yml logs -f frontend
 docker-compose -f docker/docker-compose.yml logs -f db
 ```
 
-### Stop Services
+ Stop Services
 ```bash
-# Stop (keeps volumes)
+ Stop (keeps volumes)
 docker-compose -f docker/docker-compose.yml down
 
-# Stop and remove volumes (️ deletes data!)
+ Stop and remove volumes (️ deletes data!)
 docker-compose -f docker/docker-compose.yml down -v
 ```
 
-### Rebuild Single Service
+ Rebuild Single Service
 ```bash
-# Rebuild backend
+ Rebuild backend
 docker-compose -f docker/docker-compose.yml up -d --build backend
 
-# Rebuild frontend
+ Rebuild frontend
 docker-compose -f docker/docker-compose.yml up -d --build frontend
 ```
 
-### Execute Commands in Containers
+ Execute Commands in Containers
 ```bash
-# Backend shell
+ Backend shell
 docker-compose -f docker/docker-compose.yml exec backend bash
 
-# Run migrations manually
+ Run migrations manually
 docker-compose -f docker/docker-compose.yml exec backend alembic upgrade head
 
-# Frontend shell
+ Frontend shell
 docker-compose -f docker/docker-compose.yml exec frontend sh
 
-# Database shell
+ Database shell
 docker-compose -f docker/docker-compose.yml exec db psql -U postgres -d finance_tracker
 ```
 
-## Data Persistence
+ Data Persistence
 
 All database data is stored in a Docker volume:
-- **Volume name:** `finance-tracker_postgres_data`
-- **Location:** Managed by Docker
-- **Persistence:** Data survives container restarts
+- Volume name: `finance-tracker_postgres_data`
+- Location: Managed by Docker
+- Persistence: Data survives container restarts
 
-### View Volumes
+ View Volumes
 ```bash
 docker volume ls | grep finance
 ```
 
-### Backup Database
+ Backup Database
 ```bash
-# Export database
+ Export database
 docker-compose -f docker/docker-compose.yml exec db pg_dump -U postgres finance_tracker > backup.sql
 
-# Import database
+ Import database
 cat backup.sql | docker-compose -f docker/docker-compose.yml exec -T db psql -U postgres finance_tracker
 ```
 
-### Reset Database (️ Destructive!)
+ Reset Database (️ Destructive!)
 ```bash
-# Stop services
+ Stop services
 docker-compose -f docker/docker-compose.yml down
 
-# Remove volume
+ Remove volume
 docker volume rm finance-tracker_postgres_data
 
-# Start fresh
+ Start fresh
 docker-compose -f docker/docker-compose.yml up -d
 ```
 
-## Environment Variables
+ Environment Variables
 
 Create a `.env` file in the root directory:
 
 ```bash
-# Copy example
+ Copy example
 cp docker/.env.example .env
 
-# Edit as needed
+ Edit as needed
 nano .env
 ```
 
@@ -175,116 +175,116 @@ Available variables:
 - `POSTGRES_USER` - Database user (default: postgres)
 - `POSTGRES_PASSWORD` - Database password (default: postgres)
 - `POSTGRES_DB` - Database name (default: finance_tracker)
-- `NEXT_PUBLIC_API_BASE_URL` - API URL for frontend (default: http://localhost:8000)
+- `NEXT_PUBLIC_API_BASE_URL` - API URL for frontend (default: http://localhost:)
 
-## Troubleshooting
+ Troubleshooting
 
-### Services won't start
+ Services won't start
 ```bash
-# Check status
+ Check status
 docker-compose -f docker/docker-compose.yml ps
 
-# View logs for errors
+ View logs for errors
 docker-compose -f docker/docker-compose.yml logs
 
-# Rebuild from scratch
+ Rebuild from scratch
 docker-compose -f docker/docker-compose.yml down -v
 docker-compose -f docker/docker-compose.yml up -d --build
 ```
 
-### Port already in use
+ Port already in use
 ```bash
-# Find process using port
-lsof -i :3000
-lsof -i :8000
-lsof -i :5432
+ Find process using port
+lsof -i :
+lsof -i :
+lsof -i :
 
-# Change ports in docker-compose.yml
-# Example: "3001:3000" maps container port 3000 to host port 3001
+ Change ports in docker-compose.yml
+ Example: ":" maps container port  to host port 
 ```
 
-### Database connection issues
+ Database connection issues
 ```bash
-# Check database health
+ Check database health
 docker-compose -f docker/docker-compose.yml exec db pg_isready -U postgres
 
-# Check logs
+ Check logs
 docker-compose -f docker/docker-compose.yml logs db
 
-# Restart database
+ Restart database
 docker-compose -f docker/docker-compose.yml restart db
 ```
 
-### Frontend can't connect to backend
-1. Check backend is running: `curl http://localhost:8000`
-2. Verify `NEXT_PUBLIC_API_BASE_URL` in `.env`
-3. Check browser console for CORS errors
+ Frontend can't connect to backend
+. Check backend is running: `curl http://localhost:`
+. Verify `NEXT_PUBLIC_API_BASE_URL` in `.env`
+. Check browser console for CORS errors
 
-### Clear everything and start fresh
+ Clear everything and start fresh
 ```bash
-# Stop all services
+ Stop all services
 docker-compose -f docker/docker-compose.yml down -v
 
-# Remove images
+ Remove images
 docker-compose -f docker/docker-compose.yml rm -f
 docker rmi finance-tracker-backend finance-tracker-frontend
 
-# Rebuild
+ Rebuild
 docker-compose -f docker/docker-compose.yml up -d --build
 ```
 
-## Performance Tips
+ Performance Tips
 
-### Reduce build time
+ Reduce build time
 ```bash
-# Use BuildKit
-DOCKER_BUILDKIT=1 docker-compose -f docker/docker-compose.yml build
+ Use BuildKit
+DOCKER_BUILDKIT= docker-compose -f docker/docker-compose.yml build
 
-# Build in parallel
+ Build in parallel
 docker-compose -f docker/docker-compose.yml build --parallel
 ```
 
-### View resource usage
+ View resource usage
 ```bash
 docker stats
 ```
 
-### Prune unused resources
+ Prune unused resources
 ```bash
-# Remove unused containers, networks, images
+ Remove unused containers, networks, images
 docker system prune -a
 
-# Remove unused volumes (️ be careful!)
+ Remove unused volumes (️ be careful!)
 docker volume prune
 ```
 
-## Migration from Local Setup
+ Migration from Local Setup
 
 If you were running services locally:
 
-1. **Stop local services:**
+. Stop local services:
    ```bash
    ./stop.sh
    ```
 
-2. **Backup your database:**
+. Backup your database:
    ```bash
    pg_dump -U postgres finance_tracker > backup.sql
    ```
 
-3. **Start Docker services:**
+. Start Docker services:
    ```bash
    docker-compose -f docker/docker-compose.yml up -d
    ```
 
-4. **Restore database (if needed):**
+. Restore database (if needed):
    ```bash
    cat backup.sql | docker-compose -f docker/docker-compose.yml exec -T db psql -U postgres finance_tracker
    ```
 
-## CI/CD Integration
+ CI/CD Integration
 
-### GitHub Actions Example
+ GitHub Actions Example
 ```yaml
 name: Build and Test
 
@@ -294,59 +294,59 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v
       - name: Build services
         run: docker-compose -f docker/docker-compose.yml build
       - name: Run tests
         run: docker-compose -f docker/docker-compose.yml run backend pytest
 ```
 
-## Production Deployment
+ Production Deployment
 
 For production deployment:
 
-1. **Update `.env` with secure values**
-2. **Use a reverse proxy (nginx/Traefik)**
-3. **Enable HTTPS**
-4. **Set proper SECRET_KEY**
-5. **Configure external database (RDS/CloudSQL)**
-6. **Use Docker secrets for sensitive data**
-7. **Enable monitoring (Prometheus/Grafana)**
+. Update `.env` with secure values
+. Use a reverse proxy (nginx/Traefik)
+. Enable HTTPS
+. Set proper SECRET_KEY
+. Configure external database (RDS/CloudSQL)
+. Use Docker secrets for sensitive data
+. Enable monitoring (Prometheus/Grafana)
 
 Example with external database:
 ```yaml
 services:
   backend:
     environment:
-      DATABASE_URL: postgresql://user:pass@external-db:5432/finance_tracker
+      DATABASE_URL: postgresql://user:pass@external-db:/finance_tracker
 ```
 
-## Advanced Configuration
+ Advanced Configuration
 
-### Custom networks
+ Custom networks
 ```yaml
 networks:
   frontend-network:
   backend-network:
 ```
 
-### Resource limits
+ Resource limits
 ```yaml
 services:
   backend:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '.'
+          memory: M
 ```
 
-### Health checks
+ Health checks
 Already configured for `db` service. Add to other services:
 ```yaml
 healthcheck:
-  test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-  interval: 30s
-  timeout: 10s
-  retries: 3
+  test: ["CMD", "curl", "-f", "http://localhost:/health"]
+  interval: s
+  timeout: s
+  retries: 
 ```
