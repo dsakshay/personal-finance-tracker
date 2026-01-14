@@ -1,4 +1,4 @@
-# 🔧 Service Management Scripts
+#  Service Management Scripts
 
 Convenience scripts to manage the Personal Finance Tracker application using Docker Compose.
 
@@ -134,7 +134,7 @@ lsof -i :3000
 
 ### Reset everything
 ```bash
-# Stop and remove all data (⚠️ destructive!)
+# Stop and remove all data (️ destructive!)
 ./scripts/stop.sh
 # Answer 'y' when asked about volumes
 
