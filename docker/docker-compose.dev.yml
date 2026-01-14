@@ -1,0 +1,77 @@
+version: '3.8'
+
+# Development docker-compose with hot-reload
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    container_name: finance-tracker-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: finance_tracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - finance-network
+
+  # Backend API (FastAPI) - Development with hot-reload
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../docker/backend/Dockerfile.dev
+    container_name: finance-tracker-backend-dev
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/finance_tracker
+      SECRET_KEY: dev-secret-key-change-in-production
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - finance-network
+    volumes:
+      - ../backend:/app
+      - backend_venv:/app/.venv
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  # Frontend (Next.js) - Development with hot-reload
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/frontend/Dockerfile.dev
+    container_name: finance-tracker-frontend-dev
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - finance-network
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+
+volumes:
+  postgres_data_dev:
+    driver: local
+  backend_venv:
+    driver: local
+
+networks:
+  finance-network:
+    driver: bridge

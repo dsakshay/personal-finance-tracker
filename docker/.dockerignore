@@ -1,0 +1,6 @@
+# Ignore everything at docker level
+*
+
+# Allow only necessary files for builds
+!backend/
+!frontend/
