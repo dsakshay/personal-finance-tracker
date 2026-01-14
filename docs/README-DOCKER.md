@@ -1,4 +1,4 @@
-# 🐳 Docker Deployment Guide
+#  Docker Deployment Guide
 
 This project supports both **production** and **development** Docker setups.
 
@@ -49,22 +49,22 @@ Once running:
 ## Production vs Development
 
 ### Production (`docker-compose.yml`)
-- ✅ Optimized builds
-- ✅ Minimal image sizes
-- ✅ No source code mounting
-- ✅ Best for deployment
-- ❌ No hot-reload (requires rebuild for changes)
+-  Optimized builds
+-  Minimal image sizes
+-  No source code mounting
+-  Best for deployment
+-  No hot-reload (requires rebuild for changes)
 
 ```bash
 docker-compose -f docker/docker-compose.yml up -d --build
 ```
 
 ### Development (`docker/docker-compose.dev.yml`)
-- ✅ Hot-reload enabled
-- ✅ Source code mounted as volumes
-- ✅ Fast iteration
-- ✅ Best for local development
-- ⚠️ Larger image sizes
+-  Hot-reload enabled
+-  Source code mounted as volumes
+-  Fast iteration
+-  Best for local development
+- ️ Larger image sizes
 
 ```bash
 docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d --build
@@ -97,7 +97,7 @@ docker-compose -f docker/docker-compose.yml logs -f db
 # Stop (keeps volumes)
 docker-compose -f docker/docker-compose.yml down
 
-# Stop and remove volumes (⚠️ deletes data!)
+# Stop and remove volumes (️ deletes data!)
 docker-compose -f docker/docker-compose.yml down -v
 ```
 
@@ -146,7 +146,7 @@ docker-compose -f docker/docker-compose.yml exec db pg_dump -U postgres finance_
 cat backup.sql | docker-compose -f docker/docker-compose.yml exec -T db psql -U postgres finance_tracker
 ```
 
-### Reset Database (⚠️ Destructive!)
+### Reset Database (️ Destructive!)
 ```bash
 # Stop services
 docker-compose -f docker/docker-compose.yml down
@@ -254,7 +254,7 @@ docker stats
 # Remove unused containers, networks, images
 docker system prune -a
 
-# Remove unused volumes (⚠️ be careful!)
+# Remove unused volumes (️ be careful!)
 docker volume prune
 ```
 

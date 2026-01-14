@@ -1,4 +1,4 @@
-# 🚀 Service Management Scripts
+#  Service Management Scripts
 
 This project includes convenience scripts to manage all services (PostgreSQL, Backend, Frontend).
 
@@ -17,7 +17,7 @@ This project includes convenience scripts to manage all services (PostgreSQL, Ba
 
 ## Scripts Overview
 
-### 📦 `start.sh`
+###  `start.sh`
 Starts all services in the correct order:
 1. PostgreSQL (Docker container)
 2. Backend (FastAPI with auto-reload)
@@ -34,7 +34,7 @@ Starts all services in the correct order:
 ./scripts/start.sh
 ```
 
-### 🛑 `stop.sh`
+###  `stop.sh`
 Gracefully stops all services:
 1. Frontend (Next.js)
 2. Backend (FastAPI)
@@ -50,7 +50,7 @@ Gracefully stops all services:
 ./scripts/stop.sh
 ```
 
-### 📊 `status.sh`
+###  `status.sh`
 Check the status of all services:
 - PostgreSQL container status
 - Backend API health check
@@ -83,7 +83,7 @@ docker-compose -f docker/docker-compose.dev.yml logs -f frontend.log
 
 ## Data Persistence
 
-✅ **Your data is safe!**
+ **Your data is safe!**
 - PostgreSQL uses a Docker volume (`finance-tracker-data`)
 - Data persists across container restarts
 - Stopping services does NOT delete data
