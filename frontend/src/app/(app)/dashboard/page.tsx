@@ -78,7 +78,7 @@ export default function DashboardPage() {
             <div className="text-center">
               <div className="text-sm text-neutral-600 mb-2">Total Balance (Current Month End)</div>
               <div className="text-4xl font-bold text-neutral-900">
-                {formatMoney(
+                {q.data && formatMoney(
                   q.data.by_account.reduce((sum, acc) => sum + parseFloat(acc.closing_balance), 0).toFixed(2),
                   { currency: q.data.summary.currency }
                 )}
