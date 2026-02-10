@@ -1,10 +1,10 @@
-# 💰 Personal Finance Tracker (MVP)
+#  Personal Finance Tracker (MVP)
 
 A transparent, event-driven personal finance tracker designed to accurately track income, expenses, transfers, and balances across multiple accounts, with a clean upgrade path to a production-grade financial ledger.
 
 ---
 
-## 📌 Motivation
+##  Motivation
 
 Most personal finance tools either:
 - Hide how balances are computed
@@ -20,7 +20,7 @@ The MVP focuses on *manual transaction entry* and *derived insights*, while layi
 
 ---
 
-## 🎯 MVP Goals
+##  MVP Goals
 
 ### Functional Goals
 - Support **multiple users** on the platform (strict data isolation)
@@ -46,7 +46,7 @@ The MVP focuses on *manual transaction entry* and *derived insights*, while layi
 
 ---
 
-## 🧠 Core Design Principles
+##  Core Design Principles
 
 1. **Event-first thinking**
    - Transactions are append-only
@@ -69,7 +69,7 @@ The MVP focuses on *manual transaction entry* and *derived insights*, while layi
 
 ---
 
-## 🧱 High-Level Architecture (MVP)
+##  High-Level Architecture (MVP)
 
 Frontend → Backend API → Database
 
@@ -82,7 +82,7 @@ Frontend → Backend API → Database
 
 ---
 
-## 👤 User Model (Platform Multi-User)
+##  User Model (Platform Multi-User)
 
 - Multiple independent users can use the platform
 - Each user:
@@ -95,7 +95,7 @@ Frontend → Backend API → Database
 
 ---
 
-## 🗄️ Data Model (MVP)
+## Data Model (MVP)
 
 ### User
 Represents a platform user.
@@ -157,7 +157,7 @@ Both transactions:
 
 ---
 
-## 📊 Financial Computation Model
+##  Financial Computation Model
 
 ### Monthly Summary (Derived)
 
@@ -179,7 +179,7 @@ Monthly summaries are **derived**, not stored, in MVP.
 
 ---
 
-## 📈 Visualizations (MVP)
+##  Visualizations (MVP)
 
 - Monthly income vs expense (bar chart)
 - Expense distribution by category (pie chart)
@@ -190,7 +190,7 @@ All visualizations are derived from transaction data.
 
 ---
 
-## 🔐 Security & Data Integrity (MVP)
+##  Security & Data Integrity (MVP)
 
 - All queries scoped to authenticated user
 - Monetary values stored as integers
@@ -200,7 +200,7 @@ All visualizations are derived from transaction data.
 
 ---
 
-## 🚀 Extensibility Roadmap
+##  Extensibility Roadmap
 
 ### Phase 2
 - Cached monthly summaries
@@ -220,7 +220,7 @@ All visualizations are derived from transaction data.
 
 ---
 
-## ✅ Success Criteria (MVP)
+##  Success Criteria (MVP)
 
 The MVP is successful if:
 - Financial summaries are mathematically correct
@@ -230,7 +230,7 @@ The MVP is successful if:
 
 ---
 
-## ❓ Open Design Questions
+##  Open Design Questions
 
 - When should summaries be cached vs computed?
 - Should transactions ever be editable?
@@ -239,7 +239,7 @@ The MVP is successful if:
 
 ---
 
-## 🛠️ Initial Tech Stack
+## Initial Tech Stack
 
 - **Backend**: Python (FastAPI)
 - **Database**: PostgreSQL
@@ -248,13 +248,13 @@ The MVP is successful if:
 
 ---
 
-## 📄 License
+##  License
 
 MIT (tentative)
 
 ---
 
-### ✨ End of MVP Design
+###  End of MVP Design
 
 
 

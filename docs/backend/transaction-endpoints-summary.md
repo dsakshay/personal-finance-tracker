@@ -32,12 +32,12 @@ Authorization: Bearer <token>
 ```
 
 **Key Features:**
-- ✅ Client sends **positive amounts** only (`"500.00"`)
-- ✅ Backend applies sign based on type (expense → negative)
-- ✅ Validates account belongs to current user
-- ✅ Prevents future transaction dates
-- ✅ Validates currency matches account
-- ✅ Rejects transfer type (use separate endpoint)
+-  Client sends **positive amounts** only (`"500.00"`)
+-  Backend applies sign based on type (expense → negative)
+-  Validates account belongs to current user
+-  Prevents future transaction dates
+-  Validates currency matches account
+-  Rejects transfer type (use separate endpoint)
 
 **Data Flow:**
 ```
@@ -101,12 +101,12 @@ Authorization: Bearer <token>
 ```
 
 **Key Features:**
-- ✅ Creates **TWO transactions atomically**
-- ✅ Validates both accounts belong to same user
-- ✅ Validates currencies match
-- ✅ Links transactions via `related_account_id`
-- ✅ Uses database transaction for atomicity
-- ✅ Rolls back both on any failure
+-  Creates **TWO transactions atomically**
+-  Validates both accounts belong to same user
+-  Validates currencies match
+-  Links transactions via `related_account_id`
+-  Uses database transaction for atomicity
+-  Rolls back both on any failure
 
 **Why Two Transactions?**
 
@@ -175,11 +175,11 @@ Authorization: Bearer <token>
 ```
 
 **Key Features:**
-- ✅ Filters: account_id, transaction_type, tag
-- ✅ Pagination: limit (max 500), offset
-- ✅ Authorization: Only current user's transactions
-- ✅ Ordering: Newest first (transaction_date DESC)
-- ✅ Includes account name (denormalized for display)
+-  Filters: account_id, transaction_type, tag
+-  Pagination: limit (max 500), offset
+-  Authorization: Only current user's transactions
+-  Ordering: Newest first (transaction_date DESC)
+-  Includes account name (denormalized for display)
 
 **Query Filters:**
 ```python
@@ -213,7 +213,7 @@ query = query.order_by(
 # Account must belong to current user
 account = db.query(Account).filter(
     Account.id == account_id,
-    Account.user_id == current_user.id,  # 🔒 Critical!
+    Account.user_id == current_user.id,  #  Critical!
 ).first()
 
 if not account:
@@ -494,8 +494,8 @@ Operation 1: Debit Account A by ₹1,000
 Operation 2: Credit Account B by ₹1,000
 
 Atomicity guarantees:
-✅ Both succeed → Transfer complete
-❌ Either fails → Both rolled back, no partial state
+ Both succeed → Transfer complete
+ Either fails → Both rolled back, no partial state
 ```
 
 ### How We Implement It
@@ -520,7 +520,7 @@ db.rollback()
 **2. Single Commit Point**
 
 ```python
-# ❌ BAD: Multiple commits
+#  BAD: Multiple commits
 db.add(debit)
 db.commit()  # First commit
 
@@ -528,7 +528,7 @@ db.add(credit)
 db.commit()  # Second commit
 # → If second fails, first is already saved!
 
-# ✅ GOOD: Single commit
+#  GOOD: Single commit
 db.add(debit)
 db.add(credit)
 db.commit()  # Both committed together
@@ -562,7 +562,7 @@ db.commit()  # Network error!
 
 # PostgreSQL never receives commit command
 # → Automatic rollback after timeout
-# → Both transactions discarded ✅
+# → Both transactions discarded 
 ```
 
 **Scenario 2: Constraint Violation**
@@ -576,21 +576,21 @@ db.commit()
 
 # PostgreSQL rejects: Foreign key violation
 # → Automatic rollback
-# → Both discarded ✅
+# → Both discarded 
 ```
 
 **Scenario 3: Server Crash**
 ```python
 db.add(debit)
 db.add(credit)
-db.commit()  # ✅ Success!
+db.commit()  #  Success!
 
-# 💥 Server crashes immediately after
+#  Server crashes immediately after
 
 # What happens?
 # → Data was already written to PostgreSQL
 # → Durability (ACID: D) guarantees persistence
-# → Both transactions safe ✅
+# → Both transactions safe 
 ```
 
 ### ACID Properties
@@ -718,17 +718,17 @@ def test_cannot_access_other_user_account():
 ### Current Implementation
 
 **POST /transactions:**
-- ✅ O(1) queries (1 account lookup, 1 insert)
-- ✅ Efficient
+-  O(1) queries (1 account lookup, 1 insert)
+-  Efficient
 
 **POST /transactions/transfer:**
-- ✅ O(1) queries (2 account lookups, 2 inserts)
-- ✅ Atomic with minimal overhead
+-  O(1) queries (2 account lookups, 2 inserts)
+-  Atomic with minimal overhead
 
 **GET /transactions:**
-- ✅ O(1) query with filters
-- ✅ Pagination prevents large result sets
-- ⚠️ No account name denormalization yet (requires JOIN)
+-  O(1) query with filters
+-  Pagination prevents large result sets
+- No account name denormalization yet (requires JOIN)
 
 ### Optimization Opportunities
 
@@ -795,10 +795,10 @@ Already handled by SQLAlchemy `create_engine(pool_size=...)`.
 
 ### Files Modified/Created
 
-- ✅ [schemas/transaction.py](/home/akshay/personal-meta/personal-projects/apps/personal-finance-tracker/backend/app/schemas/transaction.py) - Request/response schemas
-- ✅ [routers/transactions.py](/home/akshay/personal-meta/personal-projects/apps/personal-finance-tracker/backend/app/routers/transactions.py) - Endpoint implementations
-- ✅ [transfer-modeling-guide.md](transfer-modeling-guide.md) - Why two transactions, atomicity explanation
-- ✅ [transaction-endpoints-summary.md](transaction-endpoints-summary.md) - This document
+-  [schemas/transaction.py](/home/akshay/personal-meta/personal-projects/apps/personal-finance-tracker/backend/app/schemas/transaction.py) - Request/response schemas
+-  [routers/transactions.py](/home/akshay/personal-meta/personal-projects/apps/personal-finance-tracker/backend/app/routers/transactions.py) - Endpoint implementations
+-  [transfer-modeling-guide.md](transfer-modeling-guide.md) - Why two transactions, atomicity explanation
+-  [transaction-endpoints-summary.md](transaction-endpoints-summary.md) - This document
 
 ### Next Steps
 

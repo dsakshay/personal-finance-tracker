@@ -2,7 +2,7 @@
 
 Quick reference for scope decisions. When considering a feature, check if it's on the "Do Not Build" list.
 
-## 🚫 Quick "Do Not Build" List
+##  Quick "Do Not Build" List
 
 ### Authentication
 - [ ] OAuth (Google/GitHub login)
@@ -83,7 +83,7 @@ Quick reference for scope decisions. When considering a feature, check if it's o
 
 ---
 
-## ✅ MVP Feature Checklist (Already Done)
+##  MVP Feature Checklist (Already Done)
 
 - [x] User registration & login (JWT)
 - [x] Password hashing (bcrypt)
@@ -103,23 +103,23 @@ Quick reference for scope decisions. When considering a feature, check if it's o
 
 ---
 
-## 🎯 Decision Shortcuts
+##  Decision Shortcuts
 
 | Question | Answer | Action |
 |----------|--------|--------|
-| Does it require email? | YES | ❌ Defer |
-| Does it require ML? | YES | ❌ Defer |
-| Does it require file storage? | YES | ❌ Defer |
-| Does it require external API? | YES | ❌ Defer |
-| Is it for multi-user? | YES | ❌ Defer to Phase 4 |
-| Is it for performance? | YES | ❌ Defer to Phase 2 |
-| Is it for production? | YES | ❌ Defer to Phase 5 |
-| Is it a bug fix? | YES | ✅ Build now |
-| Is it a security fix? | YES | ✅ Build now |
+| Does it require email? | YES |  Defer |
+| Does it require ML? | YES |  Defer |
+| Does it require file storage? | YES |  Defer |
+| Does it require external API? | YES |  Defer |
+| Is it for multi-user? | YES |  Defer to Phase 4 |
+| Is it for performance? | YES |  Defer to Phase 2 |
+| Is it for production? | YES |  Defer to Phase 5 |
+| Is it a bug fix? | YES |  Build now |
+| Is it a security fix? | YES |  Build now |
 
 ---
 
-## 🛑 Stop Words
+##  Stop Words
 
 If you hear these, **STOP and review scope**:
 
@@ -134,21 +134,21 @@ If you hear these, **STOP and review scope**:
 
 ---
 
-## ✍️ Approval Required
+## Approval Required
 
 Before building ANY new feature:
 
-1. ☐ Check [Scope Boundaries](./scope-boundaries.md)
-2. ☐ Verify it's not on "Do Not Build" list
-3. ☐ Ask: "Does MVP work without this?"
-4. ☐ If answer is "yes" → Defer it
-5. ☐ Document decision
+1.  Check [Scope Boundaries](./scope-boundaries.md)
+2.  Verify it's not on "Do Not Build" list
+3.  Ask: "Does MVP work without this?"
+4.  If answer is "yes" → Defer it
+5.  Document decision
 
 ---
 
-## 📊 Current Status
+##  Current Status
 
-**MVP Phase 1:** ✅ **COMPLETE**
+**MVP Phase 1:**  **COMPLETE**
 
 **Next Steps:**
 1. Use the app with real data
@@ -158,4 +158,4 @@ Before building ANY new feature:
 
 ---
 
-**Remember:** Build less, ship faster, learn more. 🚀
+**Remember:** Build less, ship faster, learn more. 

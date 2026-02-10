@@ -38,14 +38,14 @@ python -m pytest tests/ --cov=app --cov-report=html
 
 ## Current Test Status
 
-✅ **45/45 tests passing** (100%) 🎉
+ **45/45 tests passing** (100%) 
 
 ### All Categories Passing:
-- ✅ **Authentication tests** (11 tests) - Signup, login, token validation, authorization
-- ✅ **Account creation tests** (9 tests) - CRUD operations, currency validation, multi-user isolation
-- ✅ **Transaction tests** (10 tests) - Income/expense creation, filtering, validation
-- ✅ **Transfer tests** (9 tests) - Double-entry bookkeeping, atomicity, money conservation
-- ✅ **Monthly summary tests** (11 tests) - Aggregation, opening/closing balances, tag breakdown
+-  **Authentication tests** (11 tests) - Signup, login, token validation, authorization
+-  **Account creation tests** (9 tests) - CRUD operations, currency validation, multi-user isolation
+-  **Transaction tests** (10 tests) - Income/expense creation, filtering, validation
+-  **Transfer tests** (9 tests) - Double-entry bookkeeping, atomicity, money conservation
+-  **Monthly summary tests** (11 tests) - Aggregation, opening/closing balances, tag breakdown
 
 ### What Was Fixed:
 1. **Auth error handling** - Aligned status codes (403 for missing token, 401 for invalid token)

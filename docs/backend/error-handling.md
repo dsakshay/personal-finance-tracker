@@ -488,7 +488,7 @@ db.commit()  # Both committed atomically
 # ALWAYS include user_id filter
 accounts = db.query(Account).filter(
     Account.id == account_id,
-    Account.user_id == current_user.id  # 🔒
+    Account.user_id == current_user.id  # 
 ).first()
 ```
 
@@ -640,14 +640,14 @@ See examples in test suite (future implementation):
 ## Summary
 
 **Error handling ensures:**
-- ✅ Clear, actionable error messages
-- ✅ Consistent JSON response format
-- ✅ Proper HTTP status codes
-- ✅ Financial data integrity
-- ✅ Cross-user access prevention
-- ✅ Currency consistency
-- ✅ Atomic operations (transfers)
-- ✅ Input validation before database
-- ✅ Graceful degradation on failures
+-  Clear, actionable error messages
+-  Consistent JSON response format
+-  Proper HTTP status codes
+-  Financial data integrity
+-  Cross-user access prevention
+-  Currency consistency
+-  Atomic operations (transfers)
+-  Input validation before database
+-  Graceful degradation on failures
 
-**Your money is safe!** 💰🔒
+**Your money is safe!** 

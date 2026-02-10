@@ -46,16 +46,16 @@ FastAPI backend for the Personal Finance Tracker MVP.
 
 ## Documentation
 
-### 📚 Core Documentation
+###  Core Documentation
 - **[API Reference](../docs/backend/api-reference.md)** - Complete API endpoint documentation
 - **[Architecture](../docs/backend/architecture.md)** - System design and technical architecture
 - **[Error Handling](../docs/backend/error-handling.md)** - Error scenarios and financial correctness
 
-### 🎯 Scope Management
+###  Scope Management
 - **[Scope Boundaries](../docs/backend/scope-boundaries.md)** - What NOT to build yet (prevent scope creep)
 - **[MVP Checklist](../docs/backend/mvp-checklist.md)** - Quick reference for scope decisions
 
-### 📖 Project Documentation
+###  Project Documentation
 - **[Architectural Decisions](../docs/decisions.md)** - Key design decisions (ADRs)
 - **[Development Roadmap](../docs/roadmap.md)** - Phased development plan
 - **[Main README](../README.md)** - Project overview and goals
@@ -214,7 +214,7 @@ open http://localhost:8000/docs
 
 ## Key Features
 
-### ✅ Implemented (MVP)
+###  Implemented (MVP)
 - **Authentication** - JWT-based auth with bcrypt password hashing
 - **User Management** - Registration, login, user isolation
 - **Accounts** - Create and manage financial accounts (multiple currencies)
@@ -226,7 +226,7 @@ open http://localhost:8000/docs
 - **Authorization** - User-scoped data access
 - **API Documentation** - Auto-generated Swagger/ReDoc
 
-### 🚧 Not Yet Implemented
+###  Not Yet Implemented
 - Balance caching (derived on-demand for MVP)
 - Transaction editing (immutable for MVP)
 - Recurring transactions
@@ -259,16 +259,16 @@ See [Development Roadmap](../docs/roadmap.md) for phased implementation plan.
 
 ## Security Features
 
-- ✅ JWT token authentication with expiration
-- ✅ Bcrypt password hashing with salt
-- ✅ User data isolation (multi-tenant safe)
-- ✅ Input validation (Pydantic schemas)
-- ✅ SQL injection prevention (SQLAlchemy ORM)
-- ✅ Currency mismatch prevention
-- ✅ Cross-user access prevention
-- ✅ No password exposure in responses
-- ✅ Proper HTTP status codes
-- ✅ Error message sanitization
+-  JWT token authentication with expiration
+-  Bcrypt password hashing with salt
+-  User data isolation (multi-tenant safe)
+-  Input validation (Pydantic schemas)
+-  SQL injection prevention (SQLAlchemy ORM)
+-  Currency mismatch prevention
+-  Cross-user access prevention
+-  No password exposure in responses
+-  Proper HTTP status codes
+-  Error message sanitization
 
 See [Error Handling](../docs/backend/error-handling.md) for security details.
 
@@ -276,14 +276,14 @@ See [Error Handling](../docs/backend/error-handling.md) for security details.
 
 ## Financial Correctness
 
-- ✅ Integer-based money storage (no floating-point errors)
-- ✅ Atomic transfers (both transactions or neither)
-- ✅ Currency validation (no mixing INR + USD)
-- ✅ Transaction immutability (audit trail preserved)
-- ✅ Balance derivation (always accurate, no drift)
-- ✅ Zero amount prevention
-- ✅ Future date validation
-- ✅ User-scoped aggregations
+-  Integer-based money storage (no floating-point errors)
+-  Atomic transfers (both transactions or neither)
+-  Currency validation (no mixing INR + USD)
+-  Transaction immutability (audit trail preserved)
+-  Balance derivation (always accurate, no drift)
+-  Zero amount prevention
+-  Future date validation
+-  User-scoped aggregations
 
 See [Architectural Decisions](../docs/decisions.md) for design rationale.
 
