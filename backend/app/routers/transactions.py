@@ -23,6 +23,7 @@ from app.schemas.transaction import (
     TransactionListResponse,
     TransferCreate,
     TransferResponse,
+    TransactionUpdate,
 )
 
 router = APIRouter()
@@ -566,3 +567,131 @@ def get_transaction(
         account_name=account_name,
         related_account_name=related_account_name,
     )
+
+
+@router.put("/{transaction_id}", response_model=TransactionResponse)
+def update_transaction(
+    transaction_id: uuid.UUID,
+    update_data: TransactionUpdate,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+) -> TransactionResponse:
+    """
+    Update an existing transaction.
+
+    Restrictions:
+    - Transaction must belong to current user
+    - Cannot edit transfers (transaction_type=TRANSFER)
+    - Cannot change transaction_type or currency
+    - If changing account, must validate ownership and currency match
+
+    Editable fields:
+    - amount, transaction_date, tag, description, payment_method, account_id
+
+    Authorization:
+    - Transaction must belong to current user
+
+    Args:
+        transaction_id: UUID of transaction to update
+        update_data: Fields to update (all optional)
+        current_user: Injected authenticated user
+        db: Database session
+
+    Returns:
+        Updated transaction with denormalized account name
+
+    Raises:
+        HTTPException 404: Transaction not found or not owned by user
+        HTTPException 400: Invalid update (e.g., editing transfer, currency mismatch)
+
+    Example Request:
+        PUT /api/v1/transactions/abc12345-6789-def0-1234-56789abcdef0
+        Authorization: Bearer <token>
+        {
+            "amount": "525.00",
+            "tag": "dining",
+            "description": "Updated description"
+        }
+    """
+    # 1. Fetch transaction with authorization check
+    transaction = (
+        db.query(Transaction)
+        .filter(
+            Transaction.id == transaction_id,
+            Transaction.user_id == current_user.id,  # 🔒 Security check
+        )
+        .first()
+    )
+
+    if not transaction:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Transaction not found",
+        )
+
+    # 2. Block transfer edits
+    if transaction.transaction_type == TransactionType.TRANSFER:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot edit transfers. Delete and recreate if needed.",
+        )
+
+    # 3. If changing account, validate ownership and currency
+    if update_data.account_id and update_data.account_id != transaction.account_id:
+        new_account = (
+            db.query(Account)
+            .filter(
+                Account.id == update_data.account_id,
+                Account.user_id == current_user.id,  # 🔒 Security check
+            )
+            .first()
+        )
+
+        if not new_account:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="New account not found",
+            )
+
+        # Currency must match
+        if new_account.currency != transaction.currency:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Currency mismatch. Transaction uses {transaction.currency}, "
+                       f"new account uses {new_account.currency}",
+            )
+
+        transaction.account_id = update_data.account_id
+
+    # 4. Update other fields if provided
+    if update_data.amount is not None:
+        # Convert to minor units with correct sign based on transaction type
+        amount_decimal = Decimal(update_data.amount)
+        amount_minor = int(amount_decimal * 100)
+
+        if transaction.transaction_type == TransactionType.EXPENSE:
+            transaction.amount_minor = -amount_minor
+        else:  # INCOME
+            transaction.amount_minor = amount_minor
+
+    if update_data.tag is not None:
+        transaction.tag = update_data.tag
+
+    if update_data.payment_method is not None:
+        transaction.payment_method = update_data.payment_method
+
+    if update_data.description is not None:
+        transaction.description = update_data.description
+
+    if update_data.transaction_date is not None:
+        transaction.transaction_date = date.fromisoformat(update_data.transaction_date)
+
+    # 5. SQLAlchemy will auto-update updated_at via onupdate
+    db.commit()
+    db.refresh(transaction)
+
+    # 6. Fetch account name for response
+    account = db.query(Account).filter(Account.id == transaction.account_id).first()
+    account_name = account.name if account else "Unknown"
+
+    return TransactionResponse.from_db_model(transaction, account_name=account_name)

@@ -13,6 +13,7 @@ export const queryKeys = {
       limit?: number;
       offset?: number;
     }) => ["transactions", "list", params ?? {}] as const,
+    detail: (id: string) => ["transactions", "detail", id] as const,
   },
   summary: {
     monthly: (params: { year: number; month: number; currency?: string }) =>

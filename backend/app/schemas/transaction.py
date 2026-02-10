@@ -184,6 +184,93 @@ class TransactionCreate(BaseModel):
         }
 
 
+class TransactionUpdate(BaseModel):
+    """
+    Schema for updating existing transactions (PUT /transactions/{id}).
+
+    All fields are optional (partial update).
+    Cannot change: transaction_type, currency, created_at, user_id.
+    Transfers cannot be edited at all.
+    """
+
+    account_id: Optional[uuid.UUID] = Field(None, description="New account ID (must match currency)")
+    amount: Optional[str] = Field(
+        None,
+        description="New amount (positive decimal string)",
+        pattern=r"^\d+\.\d{2}$",
+    )
+    tag: Optional[str] = Field(None, min_length=1, max_length=50, description="New category/tag")
+    payment_method: Optional[str] = Field(None, max_length=50, description="New payment method")
+    description: Optional[str] = Field(None, max_length=255, description="New description")
+    transaction_date: Optional[str] = Field(
+        None,
+        description="New transaction date (ISO 8601: YYYY-MM-DD)",
+        pattern=r"^\d{4}-\d{2}-\d{2}$",
+    )
+
+    @field_validator("amount")
+    @classmethod
+    def validate_amount(cls, v: Optional[str]) -> Optional[str]:
+        """Validate amount format if provided."""
+        if v is None:
+            return v
+
+        try:
+            decimal_value = Decimal(v)
+        except Exception:
+            raise ValueError("Amount must be a valid decimal string")
+
+        if decimal_value <= 0:
+            raise ValueError("Amount must be positive")
+
+        if decimal_value.as_tuple().exponent != -2:
+            raise ValueError("Amount must have exactly 2 decimal places (e.g., '500.00')")
+
+        max_value = Decimal("9999999999.99")
+        if decimal_value > max_value:
+            raise ValueError("Amount must be less than 9999999999.99")
+
+        return v
+
+    @field_validator("tag")
+    @classmethod
+    def validate_tag(cls, v: Optional[str]) -> Optional[str]:
+        """Ensure tag is not empty if provided."""
+        if v is None:
+            return v
+
+        v = v.lower().strip()
+        if not v:
+            raise ValueError("Tag cannot be empty")
+        return v
+
+    @field_validator("transaction_date")
+    @classmethod
+    def validate_transaction_date(cls, v: Optional[str]) -> Optional[str]:
+        """Validate date is in ISO 8601 format and not in the future."""
+        if v is None:
+            return v
+
+        try:
+            txn_date = date.fromisoformat(v)
+        except ValueError:
+            raise ValueError("Transaction date must be in ISO 8601 format (YYYY-MM-DD)")
+
+        if txn_date > date.today():
+            raise ValueError("Transaction date cannot be in the future")
+
+        return v
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "amount": "525.00",
+                "tag": "dining",
+                "description": "Updated description",
+            }
+        }
+
+
 class TransactionResponse(BaseModel):
     """
     Schema for transaction responses (POST /transactions, GET /transactions).
@@ -205,6 +292,7 @@ class TransactionResponse(BaseModel):
     description: Optional[str] = Field(None, description="Description/note")
     transaction_date: str = Field(..., description="Transaction date (ISO 8601)")
     created_at: str = Field(..., description="Creation timestamp (ISO 8601)")
+    updated_at: Optional[str] = Field(None, description="Last update timestamp (ISO 8601)")
 
     @classmethod
     def from_db_model(
@@ -243,6 +331,7 @@ class TransactionResponse(BaseModel):
             description=transaction.description,
             transaction_date=transaction.transaction_date.isoformat(),
             created_at=transaction.created_at.isoformat(),
+            updated_at=transaction.updated_at.isoformat() if transaction.updated_at else None,
         )
 
     class Config:

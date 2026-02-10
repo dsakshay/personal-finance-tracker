@@ -21,9 +21,24 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+# Parse arguments
+BUILD_FLAG=""
+MODE="dev"
+
+for arg in "$@"; do
+    case $arg in
+        prod|production)
+            MODE="prod"
+            ;;
+        build|--build)
+            BUILD_FLAG="--build"
+            ;;
+    esac
+done
+
 # Determine which compose file to use
 COMPOSE_FILE="docker/docker-compose.dev.yml"
-if [ "$1" = "prod" ] || [ "$1" = "production" ]; then
+if [ "$MODE" = "prod" ]; then
     COMPOSE_FILE="docker/docker-compose.yml"
     echo -e "${YELLOW}Starting in PRODUCTION mode${NC}"
 else
@@ -32,8 +47,13 @@ else
 fi
 
 # Start services
-echo -e "\n${YELLOW}Building and starting services...${NC}"
-docker-compose -f "$COMPOSE_FILE" up -d --build
+if [ -n "$BUILD_FLAG" ]; then
+    echo -e "\n${YELLOW}Building and starting services...${NC}"
+else
+    echo -e "\n${YELLOW}Starting services (skipping build for speed)...${NC}"
+    echo "  Tip: Use './scripts/start.sh build' to rebuild images"
+fi
+docker-compose -f "$COMPOSE_FILE" up -d $BUILD_FLAG
 
 # Wait for services to be healthy
 echo -e "\n${YELLOW}Waiting for services to be ready...${NC}"

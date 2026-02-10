@@ -119,6 +119,12 @@ class Transaction(Base):
         nullable=False,
     )
 
+    updated_at: Mapped[datetime | None] = mapped_column(
+        default=None,
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=True,
+    )
+
     # Relationships
     # Many transactions belong to one user
     user: Mapped["User"] = relationship("User", back_populates="transactions")

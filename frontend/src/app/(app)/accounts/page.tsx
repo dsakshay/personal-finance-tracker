@@ -48,6 +48,7 @@ export default function AccountsPage() {
                   <th className="py-2 pr-3">Currency</th>
                   <th className="py-2 pr-3">Opening</th>
                   <th className="py-2 pr-3">Current</th>
+                  <th className="py-2 pr-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -60,6 +61,14 @@ export default function AccountsPage() {
                     </td>
                     <td className="py-2 pr-3 text-neutral-900">
                       {formatMoney(a.current_balance, { currency: a.currency })}
+                    </td>
+                    <td className="py-2 pr-3">
+                      <Link
+                        href={`/accounts/${a.id}/transactions`}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        View transactions
+                      </Link>
                     </td>
                   </tr>
                 ))}

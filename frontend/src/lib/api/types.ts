@@ -73,6 +73,15 @@ export interface CreateTransferRequest {
   transaction_date: ISO8601Date;
 }
 
+export interface UpdateTransactionRequest {
+  account_id?: UUID;
+  amount?: DecimalString; // positive, backend applies sign
+  tag?: string;
+  payment_method?: string;
+  description?: string;
+  transaction_date?: ISO8601Date;
+}
+
 export interface Transaction {
   id: UUID;
   account_id: UUID;
@@ -87,6 +96,7 @@ export interface Transaction {
   description: string | null;
   transaction_date: ISO8601Date;
   created_at: ISO8601Timestamp;
+  updated_at: ISO8601Timestamp | null;
 }
 
 export interface TransactionListResponse {

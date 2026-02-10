@@ -12,6 +12,7 @@ import type {
   Transaction,
   TransactionListResponse,
   TransferResponse,
+  UpdateTransactionRequest,
   UserRead,
 } from "./types";
 
@@ -68,6 +69,11 @@ export const api = {
     create: (body: CreateTransactionRequest) =>
       apiFetch<Transaction>("/api/v1/transactions", {
         method: "POST",
+        body: JSON.stringify(body),
+      }),
+    update: (id: string, body: UpdateTransactionRequest) =>
+      apiFetch<Transaction>(`/api/v1/transactions/${id}`, {
+        method: "PUT",
         body: JSON.stringify(body),
       }),
     transfer: (body: CreateTransferRequest) =>
